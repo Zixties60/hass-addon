@@ -1,0 +1,31 @@
+configuration:
+  influx_version:
+    name: InfluxDB version
+    description: "auto detects it. The official InfluxDB add-on is version 1."
+  influx_url:
+    name: InfluxDB URL
+    description: The official InfluxDB add-on is http://a0d7b954-influxdb:8086
+  influx_database:
+    name: Database (1.x)
+    description: The database Home Assistant's InfluxDB integration writes to.
+  influx_username:
+    name: Username (1.x)
+    description: An InfluxDB user with read access to the database (create it in the add-on's Chronograf UI).
+  influx_password:
+    name: Password (1.x)
+  influx_token:
+    name: API token (2.x)
+    description: A read-only token for the bucket is enough (and recommended).
+  influx_org:
+    name: Organization (2.x)
+  influx_bucket:
+    name: Bucket (2.x)
+    description: The bucket Home Assistant's InfluxDB integration writes to.
+  allow_settings_edit:
+    name: Allow editing dashboard settings
+    description: Turn off to lock the entity selection once it is configured.
+  entity_lookback_days:
+    name: Entity discovery period (days)
+    description: Entities that reported within this many days appear in the pickers.
+network:
+  8099/tcp: Direct access without Home Assistant login (leave disabled unless you need it)

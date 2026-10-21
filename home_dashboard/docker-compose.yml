@@ -1,0 +1,27 @@
+# Standalone deployment for Home Assistant Container / Core installs.
+# The dashboard has no login of its own: keep it on your LAN or behind a reverse proxy.
+services:
+  home-dashboard:
+    build: .
+    container_name: home-dashboard
+    restart: unless-stopped
+    ports:
+      - "8099:8099"
+    environment:
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_VERSION: auto # auto | 1 | 2
+      # InfluxDB 1.x
+      INFLUX_DATABASE: homeassistant
+      INFLUX_USERNAME: ""
+      INFLUX_PASSWORD: ""
+      # InfluxDB 2.x
+      INFLUX_TOKEN: "" # read-only token for the bucket
+      INFLUX_ORG: homeassistant
+      INFLUX_BUCKET: homeassistant
+      # Optional: enables areas for the climate page and importing the Energy dashboard setup.
+      HA_URL: http://homeassistant:8123
+      HA_TOKEN: "" # long-lived access token (Profile -> Security)
+      ALLOW_SETTINGS_EDIT: "true"
+      TZ: Asia/Bangkok
+    volumes:
+      - ./data:/data

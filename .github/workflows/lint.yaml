@@ -1,0 +1,32 @@
+name: Lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  find:
+    name: Find apps
+    runs-on: ubuntu-latest
+    outputs:
+      apps: ${{ steps.apps.outputs.apps }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: apps
+        # Every top-level folder with a config.yaml is an app.
+        run: echo "apps=$(ls -d */config.yaml | xargs -n1 dirname | jq -R -s -c 'split("\n")[:-1]')" >> "$GITHUB_OUTPUT"
+
+  lint:
+    name: Lint ${{ matrix.app }}
+    needs: find
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: ${{ fromJSON(needs.find.outputs.apps) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run app linter
+        uses: frenck/action-addon-linter@v2
+        with:
+          path: ./${{ matrix.app }}
