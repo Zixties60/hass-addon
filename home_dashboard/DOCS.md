@@ -31,11 +31,12 @@ InfluxDB version. The first start imports your Energy dashboard setup; you can c
 ## Full screen
 
 Inside Home Assistant, the dashboard opens full screen: Home Assistant's sidebar and header are
-hidden while the panel is open. Use the **menu** button (top left) to open the Home Assistant
-sidebar, or the **full-screen** button next to the theme switch to return to the normal layout.
-The choice is remembered per browser. Home Assistant restores its sidebar when you leave the
-panel. This needs a recent Home Assistant version; on older versions the buttons don't appear
-and the panel opens as usual.
+hidden while the panel is open. Click **Home Assistant** at the bottom of the dashboard's sidebar
+to open Home Assistant's sidebar. On a phone, open the dashboard's sidebar first with the menu
+button at the top left.
+
+Home Assistant restores its sidebar when you leave the panel. This needs a recent Home Assistant
+version. On older versions the Home Assistant item doesn't appear and the panel opens as usual.
 
 ## Electricity prices
 

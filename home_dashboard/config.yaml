@@ -1,5 +1,5 @@
 name: Home Dashboard
-version: "0.2.0"
+version: "0.2.1"
 slug: home_dashboard
 description: Read-only dashboard for energy, solar, climate and entity history stored in InfluxDB
 url: https://github.com/Zixties60/hass-addon/tree/main/home_dashboard

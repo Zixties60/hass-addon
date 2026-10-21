@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- Mobile: the bottom navigation is now a floating bar with Overview, Energy, Solar and Climate.
+- New sidebar group with History, Settings and a Home Assistant item that opens Home
+  Assistant's sidebar. On mobile the sidebar opens from the menu button in the header.
+- The dashboard always opens full screen inside Home Assistant; the full-screen button is removed.
+
 ## 0.2.0
 
 - Progressive (tiered) electricity pricing: rates by grid import within the billing cycle, a

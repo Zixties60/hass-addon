@@ -109,10 +109,12 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-input,
-select,
-button {
-  font: inherit;
+@layer base {
+  input,
+  select,
+  button {
+    font: inherit;
+  }
 }
 
 .field {

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useStoredState } from './hooks';
 
 // Home Assistant's app panel (ha-panel-app) listens for these postMessage calls from the
 // ingress iframe. Kiosk mode hides HA's sidebar and header for as long as the panel is open;
@@ -15,11 +14,10 @@ export function toggleHaMenu() {
 }
 
 /**
- * Full-screen preference (hides HA's sidebar). `supported` turns true once HA answers,
- * so older Home Assistant versions without the protocol don't get dead buttons.
+ * Shows the dashboard full screen inside Home Assistant. Returns true once HA answers,
+ * so older Home Assistant versions without the protocol don't get a dead menu item.
  */
-export function useHaFullscreen() {
-  const [fullscreen, setFullscreen] = useStoredState<boolean>('ha-fullscreen', true);
+export function useHaFullscreen(): boolean {
   const [supported, setSupported] = useState(false);
 
   useEffect(() => {
@@ -28,11 +26,9 @@ export function useHaFullscreen() {
       if (e.source === window.parent && e.data?.type === 'home-assistant/properties') setSupported(true);
     };
     window.addEventListener('message', onMessage);
-    // Re-subscribing does not switch kiosk mode off, so leaving it needs an unsubscribe first.
-    if (!fullscreen) post({ type: 'home-assistant/unsubscribe-properties' });
-    post({ type: 'home-assistant/subscribe-properties', kioskMode: fullscreen });
+    post({ type: 'home-assistant/subscribe-properties', kioskMode: true });
     return () => window.removeEventListener('message', onMessage);
-  }, [fullscreen]);
+  }, []);
 
-  return { supported, fullscreen, setFullscreen };
+  return supported;
 }

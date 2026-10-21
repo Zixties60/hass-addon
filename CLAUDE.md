@@ -54,9 +54,9 @@ User input reaches queries only after it passes the validators in `influx.ts` (`
 - The `cycle` period kind (`src/lib/time.ts`) depends on `Period.billingDay`, which `usePeriod` fills in from the tariff settings.
 
 **Inside Home Assistant** (`src/lib/haFrame.ts`), the app uses the postMessage protocol of HA's app panel (`ha-panel-app`):
-- `home-assistant/subscribe-properties` with `kioskMode` hides HA's sidebar and header (full screen).
+- `home-assistant/subscribe-properties` with `kioskMode: true` is always sent, so the app is full screen (HA hides its sidebar and header).
 - `home-assistant/toggle-menu` opens HA's sidebar.
-- The full-screen buttons appear only after HA replies with `home-assistant/properties`.
+- The sidebar's "Home Assistant" item appears only after HA replies with `home-assistant/properties`, so older HA versions get no dead item.
 
 **Settings.** Energy categories (several entities summed per category) and climate areas are stored in `DATA_DIR/dashboard-settings.json` (`server/settings.ts`, `normalizeSettings`). On first start they are seeded from HA's `energy/get_prefs`. Writes are rejected when `allow_settings_edit` is false. Climate areas can also be resolved automatically from the HA area, device and entity registries by device class (`ha.areaSensors`).
 

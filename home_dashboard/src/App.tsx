@@ -1,18 +1,18 @@
 import {
   ChartLine,
+  House,
   LayoutDashboard,
-  Maximize2,
   Menu,
-  Minimize2,
   Monitor,
   Moon,
   Settings,
   Sun,
   SunMedium,
   Thermometer,
+  X,
   Zap,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toggleHaMenu, useHaFullscreen } from './lib/haFrame';
 import { useRoute } from './lib/hooks';
 import { getThemePref, setThemePref, type ThemePref } from './lib/theme';
@@ -23,14 +23,17 @@ import { OverviewPage } from './pages/Overview';
 import { SettingsPage } from './pages/Settings';
 import { SolarPage } from './pages/Solar';
 
+/** `main` pages are in the mobile bottom bar; the others only in the sidebar. */
 const PAGES = [
-  { key: 'overview', label: 'Overview', icon: LayoutDashboard, el: OverviewPage },
-  { key: 'energy', label: 'Energy', icon: Zap, el: EnergyPage },
-  { key: 'solar', label: 'Solar', icon: SunMedium, el: SolarPage },
-  { key: 'climate', label: 'Climate', icon: Thermometer, el: ClimatePage },
-  { key: 'history', label: 'History', icon: ChartLine, el: HistoryPage },
-  { key: 'settings', label: 'Settings', icon: Settings, el: SettingsPage },
+  { key: 'overview', label: 'Overview', icon: LayoutDashboard, el: OverviewPage, main: true },
+  { key: 'energy', label: 'Energy', icon: Zap, el: EnergyPage, main: true },
+  { key: 'solar', label: 'Solar', icon: SunMedium, el: SolarPage, main: true },
+  { key: 'climate', label: 'Climate', icon: Thermometer, el: ClimatePage, main: true },
+  { key: 'history', label: 'History', icon: ChartLine, el: HistoryPage, main: false },
+  { key: 'settings', label: 'Settings', icon: Settings, el: SettingsPage, main: false },
 ] as const;
+
+type PageDef = (typeof PAGES)[number];
 
 function ThemeToggle() {
   const [pref, setPref] = useState<ThemePref>(getThemePref);
@@ -51,92 +54,147 @@ function ThemeToggle() {
   );
 }
 
-/** Opens Home Assistant's sidebar while the dashboard is shown full screen. */
-function HaMenuButton() {
+const itemClass = (active: boolean) =>
+  `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
+    active ? 'bg-surface-2 font-medium text-ink' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
+  }`;
+
+function NavItem({ p, current, onNavigate }: { p: PageDef; current: PageDef; onNavigate?: () => void }) {
   return (
-    <button className="btn px-2" title="Home Assistant menu" aria-label="Show Home Assistant sidebar" onClick={toggleHaMenu}>
-      <Menu size={16} />
-    </button>
+    <a href={`#/${p.key}`} aria-current={p === current ? 'page' : undefined} className={itemClass(p === current)} onClick={onNavigate}>
+      <p.icon size={18} /> {p.label}
+    </a>
   );
 }
 
-function FullscreenToggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
-  const label = value ? 'Exit full screen' : 'Full screen';
+function Sidebar({
+  current,
+  haMenu,
+  onNavigate,
+  onClose,
+}: {
+  current: PageDef;
+  /** Show the item that opens Home Assistant's sidebar. */
+  haMenu: boolean;
+  onNavigate?: () => void;
+  onClose?: () => void;
+}) {
   return (
-    <button className="btn px-2" title={label} aria-label={label} aria-pressed={value} onClick={() => onChange(!value)}>
-      {value ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-    </button>
+    <div className="flex h-full flex-col">
+      <div className="flex items-center gap-2 px-4 py-4">
+        <img src="./icon.svg" alt="" className="h-7 w-7" />
+        <span className="flex-1 font-semibold">Home Dashboard</span>
+        {onClose && (
+          <button className="btn px-2" aria-label="Close menu" onClick={onClose}>
+            <X size={16} />
+          </button>
+        )}
+      </div>
+      <nav className="flex flex-1 flex-col px-2" aria-label="Pages">
+        <div className="space-y-0.5">
+          {PAGES.filter((p) => p.main).map((p) => (
+            <NavItem key={p.key} p={p} current={current} onNavigate={onNavigate} />
+          ))}
+        </div>
+        <div className="mt-auto space-y-0.5 border-t border-line pt-2">
+          {PAGES.filter((p) => !p.main).map((p) => (
+            <NavItem key={p.key} p={p} current={current} onNavigate={onNavigate} />
+          ))}
+          {haMenu && (
+            <button
+              className={itemClass(false)}
+              title="Show the Home Assistant sidebar"
+              onClick={() => {
+                onNavigate?.();
+                toggleHaMenu();
+              }}
+            >
+              <House size={18} /> Home Assistant
+            </button>
+          )}
+        </div>
+      </nav>
+      <div className="flex items-center justify-between px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-xs text-muted">
+        <span>Read-only view</span>
+        <ThemeToggle />
+      </div>
+    </div>
   );
 }
 
 export function App() {
-  const ha = useHaFullscreen();
-  const haMenu = ha.supported && ha.fullscreen;
+  const haMenu = useHaFullscreen();
   const { page } = useRoute();
   const current = PAGES.find((p) => p.key === page) ?? PAGES[0];
   const Page = current.el;
+  const [drawer, setDrawer] = useState(false);
+
+  useEffect(() => {
+    if (!drawer) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setDrawer(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [drawer]);
 
   return (
     <div className="min-h-dvh">
       {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 hidden w-56 flex-col border-r border-line bg-surface md:flex">
-        <div className="flex items-center gap-2 px-4 py-4">
-          {haMenu ? <HaMenuButton /> : <img src="./icon.svg" alt="" className="h-7 w-7" />}
-          <span className="font-semibold">Home Dashboard</span>
-        </div>
-        <nav className="flex-1 space-y-0.5 px-2">
-          {PAGES.map((p) => (
-            <a
-              key={p.key}
-              href={`#/${p.key}`}
-              aria-current={p.key === current.key ? 'page' : undefined}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm ${
-                p.key === current.key ? 'bg-surface-2 font-medium text-ink' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
-              }`}
-            >
-              <p.icon size={18} /> {p.label}
-            </a>
-          ))}
-        </nav>
-        <div className="flex items-center justify-between px-4 py-3 text-xs text-muted">
-          <span>Read-only view</span>
-          <div className="flex gap-1">
-            {ha.supported && <FullscreenToggle value={ha.fullscreen} onChange={ha.setFullscreen} />}
-            <ThemeToggle />
-          </div>
-        </div>
+      <aside className="fixed inset-y-0 left-0 hidden w-56 border-r border-line bg-surface md:block">
+        <Sidebar current={current} haMenu={haMenu} />
       </aside>
 
+      {/* Mobile sidebar (drawer) */}
+      <div className={`fixed inset-0 z-40 md:hidden ${drawer ? '' : 'pointer-events-none'}`} aria-hidden={!drawer}>
+        <div
+          className={`absolute inset-0 bg-black/50 transition-opacity motion-reduce:transition-none ${drawer ? 'opacity-100' : 'opacity-0'}`}
+          onClick={() => setDrawer(false)}
+        />
+        <aside
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu"
+          inert={!drawer}
+          className={`absolute inset-y-0 left-0 w-72 max-w-[85vw] border-r border-line bg-surface shadow-xl transition-transform duration-200 motion-reduce:transition-none ${
+            drawer ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <Sidebar current={current} haMenu={haMenu} onNavigate={() => setDrawer(false)} onClose={() => setDrawer(false)} />
+        </aside>
+      </div>
+
       {/* Mobile header */}
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-line bg-surface px-4 py-2 md:hidden">
-        <div className="flex items-center gap-2">
-          {haMenu ? <HaMenuButton /> : <img src="./icon.svg" alt="" className="h-6 w-6" />}
-          <span className="font-semibold">{current.label}</span>
-        </div>
-        <div className="flex gap-1">
-          {ha.supported && <FullscreenToggle value={ha.fullscreen} onChange={ha.setFullscreen} />}
-          <ThemeToggle />
-        </div>
+      <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-surface px-4 py-2 md:hidden">
+        <button className="btn px-2" aria-label="Open menu" aria-expanded={drawer} onClick={() => setDrawer(true)}>
+          <Menu size={16} />
+        </button>
+        <span className="font-semibold">{current.label}</span>
       </header>
 
-      <main className="mx-auto max-w-[1600px] px-4 pb-24 pt-4 md:ml-56 md:px-6 md:pb-8 md:pt-6">
+      <main className="mx-auto max-w-[1600px] px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4 md:ml-56 md:px-6 md:pb-8 md:pt-6">
         <Page />
       </main>
 
-      {/* Mobile bottom navigation */}
-      <nav className="fixed inset-x-0 bottom-0 z-20 grid grid-cols-6 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] md:hidden">
-        {PAGES.map((p) => (
-          <a
-            key={p.key}
-            href={`#/${p.key}`}
-            aria-current={p.key === current.key ? 'page' : undefined}
-            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] ${p.key === current.key ? 'text-accent' : 'text-muted'}`}
-          >
-            <p.icon size={20} />
-            {p.label}
-          </a>
-        ))}
-      </nav>
+      {/* Mobile bottom navigation: a floating bar above the page */}
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:hidden">
+        <nav className="pointer-events-auto grid w-full max-w-sm grid-cols-4 gap-1 rounded-2xl border border-line bg-surface/85 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md">
+          {PAGES.filter((p) => p.main).map((p) => {
+            const active = p.key === current.key;
+            return (
+              <a
+                key={p.key}
+                href={`#/${p.key}`}
+                aria-current={active ? 'page' : undefined}
+                className={`flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] transition-colors ${
+                  active ? 'bg-surface-2 font-medium text-accent' : 'text-muted hover:text-ink'
+                }`}
+              >
+                <p.icon size={20} />
+                {p.label}
+              </a>
+            );
+          })}
+        </nav>
+      </div>
     </div>
   );
 }

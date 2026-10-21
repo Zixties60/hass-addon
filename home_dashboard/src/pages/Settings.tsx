@@ -102,7 +102,7 @@ export function SettingsPage() {
     setDraft({ ...draft, climate: { ...draft.climate, ...patch } });
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-4 pb-20">
       <PageHeader title="Settings" />
 
       <ConnectionStatus />
@@ -225,7 +225,7 @@ export function SettingsPage() {
       </fieldset>
 
       {!readOnly && (
-        <div className="fixed inset-x-0 bottom-16 z-20 flex justify-center px-4 md:bottom-4 md:left-56">
+        <div className="fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-20 flex justify-center px-4 md:bottom-4 md:left-56">
           <div className="flex items-center gap-2 rounded-xl border border-line bg-surface p-2 shadow-lg">
             <span className="px-2 text-sm text-ink-2">
               {save.isPending ? 'Saving…' : dirty ? 'Unsaved changes' : save.isSuccess ? 'Saved' : 'No changes'}
