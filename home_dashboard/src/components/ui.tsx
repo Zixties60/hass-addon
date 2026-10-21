@@ -81,11 +81,12 @@ export function PeriodNav({ period, onChange }: { period: Period; onChange: (p: 
       <Segmented<PeriodKind>
         label="Period"
         value={period.kind}
-        onChange={(kind) => onChange({ kind, anchor: period.anchor })}
+        onChange={(kind) => onChange({ ...period, kind })}
         options={[
           { value: 'day', label: 'Day' },
           { value: 'week', label: 'Week' },
           { value: 'month', label: 'Month' },
+          { value: 'cycle', label: 'Billing' },
           { value: 'year', label: 'Year' },
         ]}
       />

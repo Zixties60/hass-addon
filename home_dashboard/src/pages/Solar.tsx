@@ -15,6 +15,7 @@ import {
 } from '../components/Chart';
 import { ChartCard, Empty, ErrorBox, Loading, PageHeader, PeriodNav, SettingsLink, StatTile } from '../components/ui';
 import { api } from '../lib/api';
+import { useCost } from '../lib/cost';
 import { nz, round, totals } from '../lib/energy';
 import { fmtEnergy, fmtMoney, fmtNumber, fmtPercent, fmtPower } from '../lib/format';
 import { useEntityMap, useSettings } from '../lib/hooks';
@@ -39,6 +40,7 @@ export function SolarPage() {
   const power = usePower(period, period.kind === 'day' ? '5m' : period.kind === 'week' ? '30m' : '1h');
   const t = useTokens();
   const s = settings?.energy;
+  const cost = useCost(period, s);
 
   if (s && !s.solar.length && !s.solarPower.length) {
     return (
@@ -61,7 +63,14 @@ export function SolarPage() {
       ) : !energy.data ? (
         <Loading />
       ) : (
-        <SolarBody energy={energy.data} power={power.data} kind={period.kind} t={t} prices={s} />
+        <SolarBody
+          energy={energy.data}
+          power={power.data}
+          kind={period.kind}
+          t={t}
+          savings={cost ? cost.saved : null}
+          currency={s?.currency ?? ''}
+        />
       )}
     </div>
   );
@@ -72,13 +81,15 @@ function SolarBody({
   power,
   kind,
   t,
-  prices,
+  savings,
+  currency,
 }: {
   energy: EnergyResult;
   power?: PowerResult;
   kind: PeriodKind;
   t: Tokens;
-  prices?: { importPrice: number; exportPrice: number; currency: string };
+  savings: number | null;
+  currency: string;
 }) {
   const tot = useMemo(() => totals(energy), [energy]);
   const peak = useMemo(() => {
@@ -89,10 +100,6 @@ function SolarBody({
     });
     return best as { v: number; t: number } | null;
   }, [power]);
-  const savings =
-    prices && (prices.importPrice || prices.exportPrice)
-      ? (tot.flows.solarToHome + tot.flows.solarToBattery) * prices.importPrice + tot.gridExport * prices.exportPrice
-      : null;
 
   return (
     <div className="space-y-4">
@@ -112,7 +119,7 @@ function SolarBody({
           />
         )}
         {savings !== null && (
-          <StatTile label="Estimated value" value={fmtMoney(savings, prices!.currency)} sub="avoided import + export credit" />
+          <StatTile label="Estimated value" value={fmtMoney(savings, currency)} sub="avoided import + export credit" />
         )}
       </div>
 

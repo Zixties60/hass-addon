@@ -1,21 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
+import { addDays, format } from 'date-fns';
 import { useMemo } from 'react';
-import type { EnergyResult } from '../../shared/types';
+import type { EnergyResult, EnergySettings } from '../../shared/types';
 import { baseOption, barSeries, categoryAxis, EChart, type EOption, valueAxis } from '../components/Chart';
 import { ChartCard, Empty, ErrorBox, Loading, PageHeader, PeriodNav, SettingsLink, StatTile } from '../components/ui';
 import { api } from '../lib/api';
+import { type CostResult, useCost } from '../lib/cost';
 import { bucketFlows, nz, round, totals } from '../lib/energy';
 import { fmtEnergy, fmtMoney, fmtNumber, fmtPercent } from '../lib/format';
 import { useHashParams, useSettings } from '../lib/hooks';
 import { type Tokens, useTokens } from '../lib/theme';
 import { bucketLabel, isCurrentPeriod, type Period, type PeriodKind, periodQuery } from '../lib/time';
 
+const PERIOD_KINDS: PeriodKind[] = ['day', 'week', 'month', 'cycle', 'year'];
+
 export function usePeriod(): [Period, (p: Period) => void] {
   const [params, setParams] = useHashParams();
-  const kind = (['day', 'week', 'month', 'year'].includes(params.get('p') ?? '') ? params.get('p') : 'day') as PeriodKind;
+  const { data: settings } = useSettings();
+  const kind = (PERIOD_KINDS.includes(params.get('p') as PeriodKind) ? params.get('p') : 'day') as PeriodKind;
   const anchor = Number(params.get('a')) || Date.now();
   return [
-    { kind, anchor },
+    { kind, anchor, billingDay: settings?.energy.tariff.billingDay ?? 1 },
     (p) => setParams({ p: p.kind, a: isCurrentPeriod(p) ? null : String(p.anchor) }),
   ];
 }
@@ -52,7 +57,7 @@ export function EnergyPage() {
       ) : isLoading || !data ? (
         <Loading />
       ) : (
-        <EnergyBody data={data} kind={period.kind} t={t} prices={s} />
+        <EnergyBody data={data} period={period} t={t} settings={s} />
       )}
     </div>
   );
@@ -60,22 +65,22 @@ export function EnergyPage() {
 
 function EnergyBody({
   data,
-  kind,
+  period,
   t,
-  prices,
+  settings,
 }: {
   data: EnergyResult;
-  kind: PeriodKind;
+  period: Period;
   t: Tokens;
-  prices?: { importPrice: number; exportPrice: number; currency: string };
+  settings?: EnergySettings;
 }) {
+  const kind = period.kind;
   const tot = useMemo(() => totals(data), [data]);
   const cfg = data.configured;
   const hasBattery = cfg.batteryCharge || cfg.batteryDischarge;
-  const cost =
-    prices && (prices.importPrice || prices.exportPrice)
-      ? tot.gridImport * prices.importPrice - tot.gridExport * prices.exportPrice
-      : null;
+  const cost = useCost(period, settings, kind === 'day' ? undefined : data.times);
+  const currency = settings?.currency ?? '';
+  const progressive = !!settings?.tariff.progressive && settings.tariff.tiers.length > 0;
   const e = (v: number) => fmtEnergy(v);
 
   return (
@@ -99,11 +104,30 @@ function EnergyBody({
           />
         )}
         <StatTile label="Self-sufficiency" value={fmtPercent(tot.selfSufficiency)} sub="consumption not from grid" />
-        {cost !== null && (
+        {cost && (
           <StatTile
-            label={cost >= 0 ? 'Net cost' : 'Net earnings'}
-            value={fmtMoney(Math.abs(cost), prices!.currency)}
-            sub="import cost − export credit"
+            label={cost.net >= 0 ? 'Net cost' : 'Net earnings'}
+            value={fmtMoney(Math.abs(cost.net), currency)}
+            sub={
+              cost.exportCredit > 0
+                ? `${fmtMoney(cost.importCost, currency)} import − ${fmtMoney(cost.exportCredit, currency)} export`
+                : 'grid import incl. charges'
+            }
+          />
+        )}
+        {cost && progressive && (
+          <StatTile
+            label="Billing cycle"
+            value={fmtNumber(cost.cycle.kwh, 0)}
+            unit="kWh"
+            sub={
+              <>
+                Tier {cost.cycle.tierIndex + 1} · {fmtMoney(cost.cycle.rate, currency)}/kWh
+                {cost.cycle.nextAt !== null && ` until ${fmtNumber(cost.cycle.nextAt, 0)} kWh`}
+                <br />
+                {format(cost.cycle.start, 'd MMM')} – {format(addDays(cost.cycle.end, -1), 'd MMM')}
+              </>
+            }
           />
         )}
       </div>
@@ -113,8 +137,103 @@ function EnergyBody({
         <FlowChart tot={tot} t={t} hasBattery={hasBattery} hasSolar={cfg.solar} />
       </div>
 
+      {cost && (cfg.solar || kind !== 'day') && <CostCard data={data} cost={cost} kind={kind} t={t} currency={currency} hasSolar={cfg.solar} />}
+
       <DevicesChart data={data} t={t} consumption={tot.consumption} />
     </div>
+  );
+}
+
+function CostFigure({ label, value, sub, swatch }: { label: string; value: string; sub?: string; swatch?: string }) {
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center gap-2 text-sm text-ink-2">
+        {swatch && <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: swatch }} />}
+        {label}
+      </div>
+      <div className="mt-0.5 text-2xl font-semibold tnum">{value}</div>
+      {sub && <div className="text-xs text-muted">{sub}</div>}
+    </div>
+  );
+}
+
+/** Bill with and without solar for the selected period, and per bucket for longer periods. */
+function CostCard({
+  data,
+  cost,
+  kind,
+  t,
+  currency,
+  hasSolar,
+}: {
+  data: EnergyResult;
+  cost: CostResult;
+  kind: PeriodKind;
+  t: Tokens;
+  currency: string;
+  hasSolar: boolean;
+}) {
+  const money = (v: number) => fmtMoney(v, currency);
+  const labels = data.times.map((x) => bucketLabel(kind, x));
+  const perBucket = kind !== 'day' && cost.buckets.length > 0;
+  const colors = { without: t.muted, with: t.role.gridImport };
+
+  const option = useMemo<EOption>(() => {
+    const base = baseOption(t);
+    const bars = (v: number[]) => v.map((x) => nz(round(x, 2)));
+    return {
+      ...base,
+      legend: { ...(base.legend as object), show: hasSolar },
+      tooltip: { ...(base.tooltip as object), valueFormatter: (v: number | null) => money(v ?? 0) },
+      xAxis: categoryAxis(t, labels),
+      yAxis: valueAxis(t, currency || null),
+      series: [
+        hasSolar && barSeries('Without solar', colors.without, bars(cost.bucketsWithoutSolar), { gap: t.surface, barGap: '10%' }),
+        barSeries(hasSolar ? 'With solar' : 'Net cost', colors.with, bars(cost.buckets), { gap: t.surface }),
+      ].filter(Boolean),
+    };
+  }, [cost, labels.join(), t, currency, hasSolar]);
+
+  const table = hasSolar
+    ? {
+        columns: ['Time', 'Without solar', 'With solar', 'Saved'],
+        rows: labels.map((l, i) => [
+          l,
+          money(cost.bucketsWithoutSolar[i]),
+          money(cost.buckets[i]),
+          money(cost.bucketsWithoutSolar[i] - cost.buckets[i]),
+        ]),
+      }
+    : { columns: ['Time', 'Net cost'], rows: labels.map((l, i) => [l, money(cost.buckets[i])]) };
+
+  return (
+    <ChartCard
+      title={hasSolar ? 'Cost comparison' : 'Cost'}
+      subtitle={
+        hasSolar
+          ? 'Grid bill for this period with and without solar · charges and tax included'
+          : 'Net grid cost · charges and tax included, export credit deducted'
+      }
+      table={perBucket ? table : undefined}
+    >
+      {hasSolar && (
+        <div className="mb-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <CostFigure label="Without solar" value={money(cost.withoutSolar)} sub="all consumption from the grid" swatch={colors.without} />
+          <CostFigure
+            label="With solar"
+            value={money(cost.net)}
+            sub={cost.exportCredit > 0 ? `after ${money(cost.exportCredit)} export credit` : 'actual grid bill'}
+            swatch={colors.with}
+          />
+          <CostFigure
+            label="Saved"
+            value={money(cost.saved)}
+            sub={cost.withoutSolar > 0 ? `${fmtPercent(cost.saved / cost.withoutSolar)} of the bill` : undefined}
+          />
+        </div>
+      )}
+      {perBucket && <EChart option={option} height={260} />}
+    </ChartCard>
   );
 }
 

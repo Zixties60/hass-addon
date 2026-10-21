@@ -28,6 +28,42 @@ After starting, open the panel from the sidebar. **Settings → Connections** sh
 InfluxDB version. The first start imports your Energy dashboard setup; you can change it under
 **Settings**.
 
+## Full screen
+
+Inside Home Assistant, the dashboard opens full screen: Home Assistant's sidebar and header are
+hidden while the panel is open. Use the **menu** button (top left) to open the Home Assistant
+sidebar, or the **full-screen** button next to the theme switch to return to the normal layout.
+The choice is remembered per browser. Home Assistant restores its sidebar when you leave the
+panel. This needs a recent Home Assistant version; on older versions the buttons don't appear
+and the panel opens as usual.
+
+## Electricity prices
+
+Under **Settings → Prices**, pick one of two tariffs:
+
+- **Flat rate:** one price per imported kWh.
+- **Progressive:** tiers by the kWh imported from the grid within the billing cycle. For example,
+  0–150 kWh at 3.2484, 150–400 kWh at 4.2218, and above 400 kWh at 4.4217. Each kWh is charged at
+  the rate of the tier it falls into. Costs for a day or week include the kWh already used earlier
+  in the same cycle.
+
+Both tariffs support these extra settings:
+
+- An **extra charge per kWh**, such as a fuel adjustment (Ft).
+- A **fixed charge per billing cycle**, spread evenly over the days of the cycle.
+- **VAT**, which applies to import charges.
+- The **day of the month the billing cycle starts**.
+- An **export credit per kWh**, a flat rate that is deducted from the cost.
+
+The **Billing** period on the Energy and Solar pages shows exactly one billing cycle.
+
+For any period, the **Cost comparison** card shows three figures:
+
+- **Without solar:** what the grid bill would have been if all consumption had come from the grid.
+  On a progressive tariff this also means reaching the higher tiers sooner.
+- **With solar:** the actual bill, after the export credit.
+- **Saved:** the difference between the two.
+
 ## Climate areas
 
 With *Add areas automatically* on, every sensor with a temperature, humidity, PM2.5, PM10,

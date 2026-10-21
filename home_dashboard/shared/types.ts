@@ -56,9 +56,31 @@ export interface EnergySettings {
   invertGridPower: boolean;
   invertBatteryPower: boolean;
   devices: { entity: string; name?: string }[];
+  /** Flat import rate per kWh (used when the tariff is not progressive). */
   importPrice: number;
   exportPrice: number;
   currency: string;
+  tariff: TariffSettings;
+}
+
+export interface TariffTier {
+  /** Upper bound of the tier in kWh per billing cycle; null = no limit (last tier). */
+  upTo: number | null;
+  rate: number;
+}
+
+export interface TariffSettings {
+  /** Tiered rates by grid import within the billing cycle instead of the flat import price. */
+  progressive: boolean;
+  tiers: TariffTier[];
+  /** Day of the month a billing cycle starts (1–28). */
+  billingDay: number;
+  /** Extra charge per imported kWh on top of every tier (fuel adjustment, network fee…). */
+  adder: number;
+  /** Fixed charge per billing cycle (service fee). */
+  fixedCharge: number;
+  /** Tax in percent on import energy and fixed charges. */
+  vat: number;
 }
 
 export interface ClimateSettings {

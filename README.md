@@ -2,7 +2,7 @@
 
 A repository of Home Assistant **Apps** (add-ons) for Home Assistant OS and Supervised installs.
 
-[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FZixties60%2Fhome-dashboard)
+[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FZixties60%2Fhass-addon)
 
 ## Apps
 
@@ -13,7 +13,7 @@ A repository of Home Assistant **Apps** (add-ons) for Home Assistant OS and Supe
 ## Installation
 
 1. Click the button above, or go to **Settings → Apps** (or **Add-ons**) → **App store** →
-   **⋮** → **Repositories**, and add `https://github.com/Zixties60/home-dashboard`.
+   **⋮** → **Repositories**, and add `https://github.com/Zixties60/hass-addon`.
 2. Find the app in the store, click **Install**, then follow its documentation.
 
 Each app's folder has its own README. Its **Documentation** tab in Home Assistant shows `DOCS.md`.

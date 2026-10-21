@@ -8,10 +8,14 @@ import {
   type DashboardSettings,
   type EnergySettings,
   type EntityInfo,
+  type TariffSettings,
+  type TariffTier,
 } from '../../shared/types';
 import { EntityPicker } from '../components/EntityPicker';
 import { Card, ErrorBox, Loading, PageHeader } from '../components/ui';
 import { api } from '../lib/api';
+import { effectiveTiers, energyCharge } from '../lib/cost';
+import { fmtMoney, fmtNumber } from '../lib/format';
 import { useEntityMap, useInfo, useSettings } from '../lib/hooks';
 
 const ENERGY_UNITS = new Set(['kWh', 'Wh', 'MWh']);
@@ -167,18 +171,9 @@ export function SettingsPage() {
 
         <Card>
           <h2 className="font-medium">Prices</h2>
-          <p className="mb-3 text-sm text-muted">Optional. Used for cost and savings estimates (flat rate).</p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Field label="Import price per kWh">
-              <input
-                type="number"
-                step="0.0001"
-                min="0"
-                className="field w-full"
-                value={draft.energy.importPrice || ''}
-                onChange={(e) => setEnergy({ importPrice: Number(e.target.value) || 0 })}
-              />
-            </Field>
+          <p className="mb-3 text-sm text-muted">Optional. Used for cost and savings estimates.</p>
+          <PricesEditor value={draft.energy} onChange={setEnergy} />
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Field label="Export credit per kWh">
               <input
                 type="number"
@@ -255,6 +250,168 @@ function Field({ label, help, children }: { label: string; help?: string; childr
       <div className="mb-1 text-sm font-medium">{label}</div>
       {children}
       {help && <div className="mt-1 text-xs text-muted">{help}</div>}
+    </div>
+  );
+}
+
+function NumberInput({
+  value,
+  onChange,
+  placeholder,
+  step = '0.0001',
+  ...rest
+}: {
+  value: number | null;
+  onChange: (v: number | null) => void;
+  placeholder?: string;
+  step?: string;
+  min?: string;
+  max?: string;
+  'aria-label'?: string;
+}) {
+  return (
+    <input
+      type="number"
+      inputMode="decimal"
+      step={step}
+      min="0"
+      className="field w-full"
+      placeholder={placeholder}
+      value={value ?? ''}
+      onChange={(e) => onChange(e.target.value === '' ? null : Number(e.target.value))}
+      {...rest}
+    />
+  );
+}
+
+function PricesEditor({ value, onChange }: { value: EnergySettings; onChange: (patch: Partial<EnergySettings>) => void }) {
+  const t = value.tariff;
+  const setTariff = (patch: Partial<TariffSettings>) => onChange({ tariff: { ...t, ...patch } });
+  const tiers = t.tiers.length ? t.tiers : [{ upTo: null, rate: value.importPrice }];
+  const setTiers = (next: TariffTier[]) => setTariff({ tiers: next });
+  const addTier = () => {
+    const last = tiers[tiers.length - 1];
+    const from = tiers.length > 1 ? (tiers[tiers.length - 2].upTo ?? 0) : 0;
+    setTiers([...tiers.slice(0, -1), { ...last, upTo: from + 100 }, { upTo: null, rate: last.rate }]);
+  };
+  const removeTier = (i: number) => {
+    const next = tiers.filter((_, j) => j !== i);
+    if (next.length) next[next.length - 1] = { ...next[next.length - 1], upTo: null };
+    setTiers(next);
+  };
+  const example = 300;
+  const cur = value.currency;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-4 text-sm">
+        <label className="flex items-center gap-2">
+          <input type="radio" name="tariff" checked={!t.progressive} onChange={() => setTariff({ progressive: false })} />
+          Flat rate
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="tariff"
+            checked={t.progressive}
+            onChange={() => setTariff({ progressive: true, tiers })}
+          />
+          Progressive (tiered by monthly usage)
+        </label>
+      </div>
+
+      {!t.progressive ? (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <Field label="Import price per kWh">
+            <NumberInput value={value.importPrice || null} onChange={(v) => onChange({ importPrice: v ?? 0 })} />
+          </Field>
+        </div>
+      ) : (
+        <div>
+          <div className="mb-1 text-sm font-medium">Tiers</div>
+          <p className="mb-2 text-xs text-muted">
+            Each kWh imported in a billing cycle is charged at the rate of the tier it falls into.
+          </p>
+          <div className="space-y-2">
+            <div className="hidden grid-cols-[10rem_10rem_10rem_auto] gap-2 text-xs text-muted sm:grid">
+              <span />
+              <span>Up to (kWh per cycle)</span>
+              <span>Rate per kWh</span>
+            </div>
+            {tiers.map((tier, i) => {
+              const from = i === 0 ? 0 : (tiers[i - 1].upTo ?? 0);
+              const last = i === tiers.length - 1;
+              return (
+                <div
+                  key={i}
+                  className="grid grid-cols-[1fr_1fr_auto] items-center justify-items-start gap-2 sm:grid-cols-[10rem_10rem_10rem_auto]"
+                >
+                  <span className="col-span-3 text-sm text-ink-2 tnum sm:col-span-1">
+                    Tier {i + 1}: from {fmtNumber(from, 0)} kWh
+                  </span>
+                  {last ? (
+                    <span className="text-sm text-muted">and above</span>
+                  ) : (
+                    <NumberInput
+                      aria-label={`Tier ${i + 1} up to kWh`}
+                      step="1"
+                      placeholder="up to kWh"
+                      value={tier.upTo}
+                      onChange={(v) => setTiers(tiers.map((x, j) => (j === i ? { ...x, upTo: v } : x)))}
+                    />
+                  )}
+                  <NumberInput
+                    aria-label={`Tier ${i + 1} rate per kWh`}
+                    placeholder="rate per kWh"
+                    value={tier.rate}
+                    onChange={(v) => setTiers(tiers.map((x, j) => (j === i ? { ...x, rate: v ?? 0 } : x)))}
+                  />
+                  <button
+                    className="btn px-2"
+                    aria-label={`Remove tier ${i + 1}`}
+                    disabled={tiers.length === 1}
+                    onClick={() => removeTier(i)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <button className="btn mt-2" onClick={addTier}>
+            <Plus size={16} /> Add tier
+          </button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <Field label="Extra per kWh" help="Added to every kWh, e.g. fuel adjustment (Ft)">
+          <NumberInput value={t.adder || null} onChange={(v) => setTariff({ adder: v ?? 0 })} />
+        </Field>
+        <Field label="Fixed charge per cycle" help="Service fee per billing cycle">
+          <NumberInput value={t.fixedCharge || null} onChange={(v) => setTariff({ fixedCharge: v ?? 0 })} />
+        </Field>
+        <Field label="Tax / VAT %" help="Applied to import charges">
+          <NumberInput step="0.1" max="100" value={t.vat || null} onChange={(v) => setTariff({ vat: v ?? 0 })} />
+        </Field>
+        <Field label="Billing cycle starts on day" help="Day of the month, 1–28">
+          <NumberInput
+            step="1"
+            min="1"
+            max="28"
+            value={t.billingDay}
+            onChange={(v) => setTariff({ billingDay: Math.min(28, Math.max(1, Math.round(v ?? 1))) })}
+          />
+        </Field>
+      </div>
+
+      <p className="text-sm text-ink-2">
+        Example: {example} kWh imported in one cycle costs{' '}
+        <b className="tnum">
+          {fmtMoney((energyCharge(example, effectiveTiers(value), t.adder) + t.fixedCharge) * (1 + t.vat / 100), cur)}
+        </b>
+        .
+      </p>
     </div>
   );
 }

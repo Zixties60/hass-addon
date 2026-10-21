@@ -10,11 +10,11 @@ container for Home Assistant Container / Core installs.
 | Page | What it shows |
 |---|---|
 | **Overview** | Live solar / home / grid / battery power, today's totals, today's power curve, climate snapshot |
-| **Energy** | Day / week / month / year: consumption split by source (solar, battery, grid) and surplus, energy-flow diagram, usage by device, self-sufficiency, net cost |
+| **Energy** | Day / week / month / billing cycle / year: consumption split by source (solar, battery, grid) and surplus, energy-flow diagram, usage by device, self-sufficiency, net cost (flat or progressive tariff), cost with vs. without solar and the amount saved |
 | **Solar** | Production per period (per inverter when several), power curve, self-consumption, peak power, estimated value |
 | **Climate** | Cards per area (temperature, humidity, PM2.5, PM10, CO₂, VOC…) with comfort status, 24 h sparkline, and an area comparison chart over any time range |
 | **History** | Pick up to 8 entities and any time range; numeric sensors are charted per unit, on/off and text states as a timeline; CSV export |
-| **Settings** | Choose the entities for each energy category (several are summed), live power sensors, devices, prices, climate areas |
+| **Settings** | Choose the entities for each energy category (several are summed), live power sensors, devices, tariff (flat or tiered, billing day, fixed charge, VAT), climate areas |
 
 Nothing in the dashboard controls Home Assistant. It only reads InfluxDB and, optionally, the
 Home Assistant API (entity names, areas and Energy-dashboard preferences).
@@ -41,13 +41,13 @@ into the official [InfluxDB app](https://github.com/hassio-addons/app-influxdb).
 
 Click the button to add the repository to your Home Assistant instance:
 
-[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FZixties60%2Fhome-dashboard)
+[![Add repository to my Home Assistant](https://my.home-assistant.io/badges/supervisor_add_addon_repository.svg)](https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url=https%3A%2F%2Fgithub.com%2FZixties60%2Fhass-addon)
 
 Or add it manually:
 
 1. Go to **Settings → Apps** (or **Settings → Add-ons**) → **App store** (or **Add-on store**).
 2. Open the **⋮** menu (top right) → **Repositories**.
-3. Paste `https://github.com/Zixties60/home-dashboard`, click **Add**, then **Close**.
+3. Paste `https://github.com/Zixties60/hass-addon`, click **Add**, then **Close**.
 4. Reload the page if **Home Dashboard** doesn't show up in the store.
 
 ### 2. Install

@@ -82,11 +82,20 @@ export function decodeRange(s: string | null, fallback: RangeValue = { preset: '
 
 // ---------- calendar periods (energy, solar) ----------
 
-export type PeriodKind = 'day' | 'week' | 'month' | 'year';
+export type PeriodKind = 'day' | 'week' | 'month' | 'cycle' | 'year';
 
 export interface Period {
   kind: PeriodKind;
   anchor: number; // any timestamp inside the period
+  /** Day of the month a billing cycle starts (for kind "cycle"). */
+  billingDay?: number;
+}
+
+/** Start of the billing cycle containing `t` (local time). */
+export function cycleStart(t: Date | number, billingDay: number): Date {
+  const d = new Date(t);
+  const start = new Date(d.getFullYear(), d.getMonth(), billingDay);
+  return d < start ? addMonths(start, -1) : start;
 }
 
 export function periodQuery(p: Period): TimeQuery {
@@ -104,6 +113,10 @@ export function periodQuery(p: Period): TimeQuery {
       const start = startOfMonth(a);
       return { start, stop: addMonths(start, 1), every: '1d' };
     }
+    case 'cycle': {
+      const start = cycleStart(a, p.billingDay ?? 1);
+      return { start, stop: addMonths(start, 1), every: '1d' };
+    }
     case 'year': {
       const start = startOfYear(a);
       return { start, stop: addYears(start, 1), every: '1mo' };
@@ -112,6 +125,7 @@ export function periodQuery(p: Period): TimeQuery {
 }
 
 export function shiftPeriod(p: Period, dir: 1 | -1): Period {
+  if (p.kind === 'cycle') return { ...p, anchor: addMonths(periodQuery(p).start, dir).getTime() };
   const shift = { day: addDays, week: addWeeks, month: addMonths, year: addYears }[p.kind];
   return { ...p, anchor: shift(new Date(p.anchor), dir).getTime() };
 }
@@ -122,6 +136,7 @@ export function periodLabel(p: Period): string {
     case 'day':
       return format(q.start, 'EEE d MMM yyyy');
     case 'week':
+    case 'cycle':
       return `${format(q.start, 'd MMM')} – ${format(addDays(q.stop, -1), 'd MMM yyyy')}`;
     case 'month':
       return format(q.start, 'MMMM yyyy');
@@ -134,6 +149,7 @@ export function bucketLabel(kind: PeriodKind, t: number): string {
   if (kind === 'day') return format(t, 'HH:mm');
   if (kind === 'year') return format(t, 'MMM');
   if (kind === 'week') return format(t, 'EEE d');
+  if (kind === 'cycle') return format(t, 'd MMM');
   return format(t, 'd');
 }
 
