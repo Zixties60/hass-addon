@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4
+
+- Inside the Home Assistant app, scrolling past the top or bottom of the dashboard no longer
+  moves the whole panel (Home Assistant's pull-to-refresh), which could leave it shifted with
+  the header hidden and an empty area below.
+
 ## 0.2.3
 
 - Inside the Home Assistant app the dashboard no longer adds its own notch and home-indicator

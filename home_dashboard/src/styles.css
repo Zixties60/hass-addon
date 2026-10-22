@@ -122,6 +122,15 @@ body {
   --safe-left: 0px;
   --safe-right: 0px;
 }
+/*
+ * In the HA app, scrolling past the top or bottom of the dashboard would carry on into the app's
+ * own scroll view (its pull-to-refresh), shifting the whole frame and sometimes leaving it
+ * stuck there. Keep overscroll inside the dashboard; it still bounces.
+ */
+:root.in-frame,
+:root.in-frame body {
+  overscroll-behavior: contain;
+}
 
 .tnum {
   font-variant-numeric: tabular-nums;
