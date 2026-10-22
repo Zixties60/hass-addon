@@ -103,7 +103,7 @@ function EnergyBody({
             swatch={t.role.battery}
           />
         )}
-        <StatTile label="Self-sufficiency" value={fmtPercent(tot.selfSufficiency)} sub="consumption not from grid" />
+        {cfg.solar && <StatTile label="Self-sufficiency" value={fmtPercent(tot.selfSufficiency)} sub="consumption not from grid" />}
         {cost && (
           <StatTile
             label={cost.net >= 0 ? 'Net cost' : 'Net earnings'}
@@ -367,12 +367,22 @@ function FlowChart({
 }
 
 function DevicesChart({ data, t, consumption }: { data: EnergyResult; t: Tokens; consumption: number }) {
+  // Devices metered by a parent device are listed under it and left out of the untracked sum, so nothing counts twice.
   const rows = useMemo(() => {
-    const list = data.devices.map((d) => ({ name: d.name, total: d.total })).sort((a, b) => b.total - a.total);
-    const tracked = list.reduce((a, d) => a + d.total, 0);
-    if (list.length && consumption - tracked > 0.01) list.push({ name: 'Untracked', total: consumption - tracked });
+    const list: { name: string; total: number; depth: number }[] = [];
+    const add = (parent: string | undefined, depth: number) => {
+      const children = data.devices.filter((d) => d.parent === parent).sort((a, b) => b.total - a.total);
+      for (const d of children) {
+        list.push({ name: d.name, total: d.total, depth });
+        add(d.entity, depth + 1);
+      }
+    };
+    add(undefined, 0);
+    const tracked = list.reduce((a, d) => a + (d.depth ? 0 : d.total), 0);
+    if (list.length && consumption - tracked > 0.01) list.push({ name: 'Untracked', total: consumption - tracked, depth: 0 });
     return list;
   }, [data, consumption]);
+  const label = (r: (typeof rows)[number]) => (r.depth ? `${'  '.repeat(r.depth - 1)}↳ ${r.name}` : r.name);
 
   if (!data.devices.length) {
     return (
@@ -391,14 +401,18 @@ function DevicesChart({ data, t, consumption }: { data: EnergyResult; t: Tokens;
     grid: { ...(base.grid as object), top: 8, right: 64 },
     tooltip: { ...(base.tooltip as object), trigger: 'item', valueFormatter: (v: number) => `${fmtNumber(v, 2)} kWh` },
     xAxis: valueAxis(t, null),
-    yAxis: categoryAxis(t, rows.map((r) => r.name), { inverse: true, axisLabel: { color: t.ink2, fontSize: fs(12), width: isNarrow() ? 96 : 140, overflow: 'truncate' } }),
+    yAxis: categoryAxis(t, rows.map(label), { inverse: true, axisLabel: { color: t.ink2, fontSize: fs(12), width: isNarrow() ? 96 : 140, overflow: 'truncate' } }),
     series: [
       {
         type: 'bar',
         name: 'Energy',
         data: rows.map((r) => ({
           value: round(r.total),
-          itemStyle: { color: r.name === 'Untracked' ? t.axis : t.role.home, borderRadius: [0, 4, 4, 0] },
+          itemStyle: {
+            color: r.name === 'Untracked' ? t.axis : t.role.home,
+            opacity: r.depth ? 0.6 : 1,
+            borderRadius: [0, 4, 4, 0],
+          },
         })),
         barMaxWidth: 20,
         label: { show: true, position: 'right', color: t.ink2, fontSize: fs(11), formatter: (p: any) => `${fmtNumber(p.value, 1)} kWh` },
@@ -411,7 +425,7 @@ function DevicesChart({ data, t, consumption }: { data: EnergyResult; t: Tokens;
       subtitle="kWh in this period"
       table={{
         columns: ['Device', 'kWh', 'Share'],
-        rows: rows.map((r) => [r.name, fmtNumber(r.total, 2), consumption > 0 ? fmtPercent(r.total / consumption) : '–']),
+        rows: rows.map((r) => [label(r), fmtNumber(r.total, 2), consumption > 0 ? fmtPercent(r.total / consumption) : '–']),
       }}
     >
       <EChart option={option} height={Math.max(160, rows.length * 34 + 30)} />

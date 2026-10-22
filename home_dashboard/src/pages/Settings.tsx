@@ -165,7 +165,10 @@ export function SettingsPage() {
 
         <Card>
           <h2 className="font-medium">Individual devices</h2>
-          <p className="mb-3 text-sm text-muted">Energy counters of single devices for the “usage by device” breakdown.</p>
+          <p className="mb-3 text-sm text-muted">
+            Energy counters of single devices for the “usage by device” breakdown. A device that another one already
+            measures (a PC on a floor meter) can be set as part of it so it is not counted twice.
+          </p>
           <DevicesEditor value={draft.energy.devices} onChange={(devices) => setEnergy({ devices })} />
         </Card>
 
@@ -433,6 +436,13 @@ function DevicesEditor({
   onChange: (v: EnergySettings['devices']) => void;
 }) {
   const names = useEntityMap();
+  const label = (d: EnergySettings['devices'][number]) => d.name || names.get(d.entity)?.name || d.entity;
+  /** True when `entity` is `of` or sits somewhere below it. */
+  const within = (entity: string | undefined, of: string): boolean =>
+    !!entity && (entity === of || within(value.find((x) => x.entity === entity)?.parent, of));
+  // A removed parent hands its children to its own parent.
+  const remove = (d: EnergySettings['devices'][number]) =>
+    onChange(value.filter((x) => x !== d).map((x) => (x.parent === d.entity ? { ...x, parent: d.parent } : x)));
   return (
     <div className="space-y-2">
       {value.map((d, i) => (
@@ -447,7 +457,23 @@ function DevicesEditor({
             onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, name: e.target.value || undefined } : x)))}
           />
           <code className="min-w-0 flex-1 truncate text-xs text-muted">{d.entity}</code>
-          <button className="btn px-2" aria-label="Remove device" onClick={() => onChange(value.filter((_, j) => j !== i))}>
+          <select
+            className="field max-w-48"
+            aria-label="Included in"
+            title="Pick the device whose meter already measures this one, so it is not counted twice"
+            value={d.parent ?? ''}
+            onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, parent: e.target.value || undefined } : x)))}
+          >
+            <option value="">Not part of another device</option>
+            {value
+              .filter((p) => !within(p.entity, d.entity))
+              .map((p) => (
+                <option key={p.entity} value={p.entity}>
+                  Part of {label(p)}
+                </option>
+              ))}
+          </select>
+          <button className="btn px-2" aria-label="Remove device" onClick={() => remove(d)}>
             <Trash2 size={16} />
           </button>
         </div>

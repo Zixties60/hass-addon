@@ -178,7 +178,13 @@ export class HomeAssistant {
       }
     }
     for (const d of prefs.device_consumption ?? []) {
-      if (isEntity(d.stat_consumption)) out.devices!.push({ entity: d.stat_consumption, name: d.name || undefined });
+      if (isEntity(d.stat_consumption)) {
+        out.devices!.push({
+          entity: d.stat_consumption,
+          name: d.name || undefined,
+          parent: isEntity(d.included_in_stat) ? d.included_in_stat : undefined,
+        });
+      }
     }
     return out;
   }

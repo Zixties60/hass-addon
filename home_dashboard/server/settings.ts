@@ -5,6 +5,7 @@ import {
   CLIMATE_METRICS,
   type ClimateMetric,
   type DashboardSettings,
+  type EnergyDevice,
   type EnergySettings,
   type TariffSettings,
   type TariffTier,
@@ -76,6 +77,24 @@ function normalizeTariff(t: any): TariffSettings {
   };
 }
 
+/** Drops duplicate devices and parents that are missing from the list or would form a loop. */
+function checkParents(devices: EnergyDevice[]): EnergyDevice[] {
+  const list = devices.filter((d, i) => devices.findIndex((x) => x.entity === d.entity) === i);
+  const byEntity = new Map(list.map((d) => [d.entity, d]));
+  for (const d of list) {
+    if (d.parent && !byEntity.has(d.parent)) d.parent = undefined;
+    const seen = new Set([d.entity]);
+    for (let p = d.parent; p; p = byEntity.get(p)?.parent) {
+      if (seen.has(p)) {
+        d.parent = undefined;
+        break;
+      }
+      seen.add(p);
+    }
+  }
+  return list;
+}
+
 /** Coerces untrusted input into a valid settings object. */
 export function normalizeSettings(input: any): DashboardSettings {
   const e = input?.energy ?? {};
@@ -86,7 +105,8 @@ export function normalizeSettings(input: any): DashboardSettings {
   energy.invertBatteryPower = e.invertBatteryPower === true;
   energy.devices = (Array.isArray(e.devices) ? e.devices : [])
     .filter((d: any) => typeof d?.entity === 'string' && parseRef(d.entity))
-    .map((d: any) => ({ entity: d.entity, name: str(d.name) || undefined }));
+    .map((d: any) => ({ entity: d.entity, name: str(d.name) || undefined, parent: str(d.parent) || undefined }));
+  energy.devices = checkParents(energy.devices);
   energy.importPrice = num(e.importPrice);
   energy.exportPrice = num(e.exportPrice);
   energy.currency = str(e.currency, 8);

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.6
+
+- Without solar entities in the settings, the Solar page is left out of the menu and the
+  Self-sufficiency tiles on Overview and Energy are hidden.
+- An individual device can be set as part of another one (for example a PC that the
+  first-floor meter already measures). "Usage by device" lists it under its parent and no
+  longer counts it twice in the untracked remainder. Imported from Home Assistant's
+  "upstream device" setting.
+- The sidebar footer shows the add-on version instead of "Read-only view".
+
 ## 0.2.5
 
 - Fixed a blank page after switching pages in recent Chrome versions (the whole dashboard

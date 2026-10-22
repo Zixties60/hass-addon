@@ -1,6 +1,6 @@
 {
   "name": "home-dashboard",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "private": true,
   "type": "module",
   "description": "Read-only Home Assistant dashboard for InfluxDB 2.x data",

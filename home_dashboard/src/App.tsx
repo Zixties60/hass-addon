@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { toggleHaMenu, useHaFullscreen } from './lib/haFrame';
-import { useRoute } from './lib/hooks';
+import { useInfo, useRoute, useSettings } from './lib/hooks';
 import { useOverlay, useSwipeDismiss } from './lib/overlay';
 import { getThemePref, setThemePref, type ThemePref } from './lib/theme';
 import { ClimatePage } from './pages/Climate';
@@ -35,6 +35,13 @@ const PAGES = [
 ] as const;
 
 type PageDef = (typeof PAGES)[number];
+
+/** Pages in the navigation: Solar is left out once the settings show no solar entities. */
+function useNavPages(): readonly PageDef[] {
+  const s = useSettings().data?.energy;
+  const noSolar = s && !s.solar.length && !s.solarPower.length;
+  return noSolar ? PAGES.filter((p) => p.key !== 'solar') : PAGES;
+}
 
 function ThemeToggle() {
   const [pref, setPref] = useState<ThemePref>(getThemePref);
@@ -80,6 +87,8 @@ function Sidebar({
   onNavigate?: () => void;
   onClose?: () => void;
 }) {
+  const pages = useNavPages();
+  const version = useInfo().data?.version;
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-2 px-4 py-4">
@@ -93,12 +102,12 @@ function Sidebar({
       </div>
       <nav className="flex flex-1 flex-col overflow-y-auto px-2" aria-label="Pages">
         <div className="space-y-1 md:space-y-0.5">
-          {PAGES.filter((p) => p.main).map((p) => (
+          {pages.filter((p) => p.main).map((p) => (
             <NavItem key={p.key} p={p} current={current} onNavigate={onNavigate} />
           ))}
         </div>
         <div className="mt-auto space-y-1 border-t border-line pt-2 md:space-y-0.5">
-          {PAGES.filter((p) => !p.main).map((p) => (
+          {pages.filter((p) => !p.main).map((p) => (
             <NavItem key={p.key} p={p} current={current} onNavigate={onNavigate} />
           ))}
           {haMenu && (
@@ -116,7 +125,7 @@ function Sidebar({
         </div>
       </nav>
       <div className="flex items-center justify-between px-4 py-3 pb-[calc(0.75rem+var(--safe-bottom))] text-xs text-muted">
-        <span>Read-only view</span>
+        <span>{version && (version === 'dev' ? 'dev' : `v${version}`)}</span>
         <ThemeToggle />
       </div>
     </div>
@@ -128,6 +137,7 @@ export function App() {
   const { page } = useRoute();
   const current = PAGES.find((p) => p.key === page) ?? PAGES[0];
   const Page = current.el;
+  const mainPages = useNavPages().filter((p) => p.main);
   const [drawer, setDrawer] = useState(false);
   const drawerRef = useRef<HTMLElement>(null);
   const closeDrawer = () => setDrawer(false);
@@ -194,9 +204,11 @@ export function App() {
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden">
         <nav
           aria-label="Main"
-          className="pointer-events-auto grid w-full max-w-sm grid-cols-4 gap-1 rounded-2xl border border-line bg-surface/90 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md"
+          className={`pointer-events-auto grid w-full max-w-sm ${
+            mainPages.length === 3 ? 'grid-cols-3' : 'grid-cols-4'
+          } gap-1 rounded-2xl border border-line bg-surface/90 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md`}
         >
-          {PAGES.filter((p) => p.main).map((p) => {
+          {mainPages.map((p) => {
             const active = p.key === current.key;
             return (
               <a

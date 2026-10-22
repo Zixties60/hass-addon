@@ -184,7 +184,8 @@ export class Services {
     const info = await this.lookup();
     const devices = s.devices.map((d) => {
       const values = valuesOf(d.entity);
-      return { entity: d.entity, name: d.name || info.get(d.entity)?.name || d.entity, values, total: sum(values) };
+      const name = d.name || info.get(d.entity)?.name || d.entity;
+      return { entity: d.entity, name, parent: d.parent, values, total: sum(values) };
     });
 
     return { times, configured, categories, consumptionDerived, devices };

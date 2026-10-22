@@ -55,12 +55,19 @@ export interface EnergySettings {
   batterySoc: string[];
   invertGridPower: boolean;
   invertBatteryPower: boolean;
-  devices: { entity: string; name?: string }[];
+  devices: EnergyDevice[];
   /** Flat import rate per kWh (used when the tariff is not progressive). */
   importPrice: number;
   exportPrice: number;
   currency: string;
   tariff: TariffSettings;
+}
+
+export interface EnergyDevice {
+  entity: string;
+  name?: string;
+  /** Entity of another device whose meter already includes this one (HA's "upstream device"). */
+  parent?: string;
 }
 
 export interface TariffTier {
@@ -128,7 +135,7 @@ export interface EnergyResult {
     EnergyCategoryData
   >;
   consumptionDerived: boolean;
-  devices: { entity: string; name: string; values: number[]; total: number }[];
+  devices: { entity: string; name: string; parent?: string; values: number[]; total: number }[];
 }
 
 export interface PowerResult {

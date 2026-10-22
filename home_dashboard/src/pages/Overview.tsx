@@ -83,7 +83,9 @@ export function OverviewPage() {
               {energy.data?.configured.gridExport && (
                 <StatTile label="Exported today" {...fmtEnergy(tot.gridExport)} swatch={t.role.gridExport} />
               )}
-              <StatTile label="Self-sufficiency" value={fmtPercent(tot.selfSufficiency)} sub="today" />
+              {energy.data?.configured.solar && (
+                <StatTile label="Self-sufficiency" value={fmtPercent(tot.selfSufficiency)} sub="today" />
+              )}
             </div>
           )}
 
