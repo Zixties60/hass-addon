@@ -115,7 +115,7 @@ function Sidebar({
           )}
         </div>
       </nav>
-      <div className="flex items-center justify-between px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-xs text-muted">
+      <div className="flex items-center justify-between px-4 py-3 pb-[calc(0.75rem+var(--safe-bottom))] text-xs text-muted">
         <span>Read-only view</span>
         <ThemeToggle />
       </div>
@@ -158,7 +158,7 @@ export function App() {
           inert={!drawer}
           {...swipe.handlers}
           style={swipe.style}
-          className={`absolute inset-y-0 left-0 w-72 max-w-[85vw] touch-pan-y overscroll-contain border-r border-line bg-surface pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)] shadow-xl transition-transform duration-200 motion-reduce:transition-none ${
+          className={`absolute inset-y-0 left-0 w-72 max-w-[85vw] touch-pan-y overscroll-contain border-r border-line bg-surface pl-[var(--safe-left)] pt-[var(--safe-top)] shadow-xl transition-transform duration-200 motion-reduce:transition-none ${
             drawer ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
@@ -167,19 +167,28 @@ export function App() {
       </div>
 
       {/* Mobile header */}
-      <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-line bg-surface/90 py-2 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur-md md:hidden">
-        <button className="btn px-2" aria-label="Open menu" aria-expanded={drawer} onClick={() => setDrawer(true)}>
-          <Menu size={20} />
+      <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-surface/90 py-1 pl-[max(0.5rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] pt-[calc(0.25rem+var(--safe-top))] backdrop-blur-md md:hidden">
+        <button
+          className="btn border-transparent bg-transparent px-2"
+          aria-label="Open menu"
+          aria-expanded={drawer}
+          onClick={() => setDrawer(true)}
+        >
+          <Menu size={22} />
         </button>
-        <span className="truncate text-lg font-semibold">{current.label}</span>
+        <img src="./icon.svg" alt="" className="h-8 w-8 shrink-0" />
+        <div className="min-w-0 leading-tight">
+          <div className="truncate font-semibold">Home Dashboard</div>
+          <div className="truncate text-xs text-muted">{current.label}</div>
+        </div>
       </header>
 
-      <main className="mx-auto max-w-[1600px] pb-[calc(7.5rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-5 md:ml-56 md:px-6 md:pb-8 md:pt-6">
+      <main className="mx-auto max-w-[1600px] pb-[calc(7rem+var(--safe-bottom))] pl-[max(1rem,var(--safe-left))] pr-[max(1rem,var(--safe-right))] pt-4 md:ml-56 md:px-6 md:pb-8 md:pt-6">
         <Page />
       </main>
 
       {/* Mobile bottom navigation: a floating bar in the thumb zone, Material 3 style (pill behind the active icon) */}
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:hidden">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-[calc(0.75rem+var(--safe-bottom))] md:hidden">
         <nav
           aria-label="Main"
           className="pointer-events-auto grid w-full max-w-sm grid-cols-4 gap-1 rounded-2xl border border-line bg-surface/90 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md"

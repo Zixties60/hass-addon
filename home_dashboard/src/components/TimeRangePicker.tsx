@@ -52,7 +52,7 @@ export function TimeRangePicker({ value, onChange }: { value: RangeValue; onChan
             aria-label="Time range"
             {...(sheet ? swipe.handlers : {})}
             style={sheet ? swipe.style : undefined}
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl border border-line bg-surface pb-[env(safe-area-inset-bottom)] shadow-lg md:absolute md:inset-x-auto md:bottom-auto md:right-0 md:z-30 md:mt-1 md:max-h-none md:w-72 md:overflow-visible md:rounded-lg md:pb-0"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl border border-line bg-surface pb-[var(--safe-bottom)] shadow-lg md:absolute md:inset-x-auto md:bottom-auto md:right-0 md:z-30 md:mt-1 md:max-h-none md:w-72 md:overflow-visible md:rounded-lg md:pb-0"
           >
             {sheet && (
               <div className="sticky top-0 z-10 bg-surface px-4 pb-1 pt-2">

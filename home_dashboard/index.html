@@ -9,6 +9,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <title>Home Dashboard</title>
     <script>
+      if (window.self !== window.top) document.documentElement.classList.add('in-frame');
       try {
         const t = localStorage.getItem('hd-theme');
         if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;

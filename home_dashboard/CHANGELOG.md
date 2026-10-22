@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.3
+
+- Inside the Home Assistant app the dashboard no longer adds its own notch and home-indicator
+  padding on top of Home Assistant's, which left empty bands above the header and below the
+  bottom navigation.
+- Mobile header shows the logo and "Home Dashboard" with the current page underneath, and is
+  more compact.
+
 ## 0.2.2
 
 - Mobile: larger text, more spacing, and touch targets of at least 44 px for buttons, inputs,

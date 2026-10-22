@@ -233,7 +233,7 @@ export function SettingsPage() {
       </fieldset>
 
       {!readOnly && (
-        <div className="fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-20 flex justify-center px-4 md:bottom-4 md:left-56">
+        <div className="fixed inset-x-0 bottom-[calc(5.75rem+var(--safe-bottom))] z-20 flex justify-center px-4 md:bottom-4 md:left-56">
           <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-line bg-surface p-2 shadow-lg md:w-auto md:max-w-none">
             <span className="min-w-0 flex-1 truncate px-2 text-sm text-ink-2">
               {save.isPending ? 'Saving…' : dirty ? 'Unsaved changes' : save.isSuccess ? 'Saved' : 'No changes'}
