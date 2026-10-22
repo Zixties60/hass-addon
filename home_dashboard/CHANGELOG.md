@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.7
+
+- The sidebar panel is shown to non-admin Home Assistant users as well (`panel_admin: false`).
+
 ## 0.2.6
 
 - Without solar entities in the settings, the Solar page is left out of the menu and the
