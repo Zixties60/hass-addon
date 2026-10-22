@@ -137,7 +137,7 @@ function ClimateSnapshot({
     <div>
       <div className="mb-2 flex items-center justify-between">
         <h2 className="font-medium">Climate</h2>
-        <a href="#/climate" className="text-sm text-accent hover:underline">
+        <a href="#/climate" className="inline-flex items-center text-sm text-accent hover:underline pointer-coarse:min-h-11">
           Details
         </a>
       </div>

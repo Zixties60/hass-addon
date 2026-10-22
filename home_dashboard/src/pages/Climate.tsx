@@ -133,7 +133,7 @@ function AreaCards({
             {sp && sp.points.length > 1 && (
               <div className="mt-3">
                 <Sparkline series={sp} t={t} />
-                <div className="text-[11px] text-muted">{metricLabel(sparkSensor!.metric)} · last 24 h</div>
+                <div className="mt-1 text-xs text-muted">{metricLabel(sparkSensor!.metric)} · last 24 h</div>
               </div>
             )}
           </button>

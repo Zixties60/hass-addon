@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Download, RefreshCw } from 'lucide-react';
 import { useMemo } from 'react';
 import type { Series } from '../../shared/types';
-import { baseOption, categoryAxis, EChart, echarts, type EOption, lineSeries, timeAxis, valueAxis } from '../components/Chart';
+import { baseOption, categoryAxis, EChart, echarts, type EOption, fs, isNarrow, lineSeries, timeAxis, valueAxis } from '../components/Chart';
 import { EntityPicker } from '../components/EntityPicker';
 import { TimeRangePicker } from '../components/TimeRangePicker';
 import { Card, ChartCard, Empty, ErrorBox, Loading, PageHeader } from '../components/ui';
@@ -228,7 +228,7 @@ function Timeline({
       yAxis: categoryAxis(t, list.map((s) => s.name), {
         inverse: true,
         axisLine: { show: false },
-        axisLabel: { color: t.ink2, fontSize: 12, width: 160, overflow: 'truncate' },
+        axisLabel: { color: t.ink2, fontSize: fs(12), width: isNarrow() ? 96 : 160, overflow: 'truncate' },
       }),
       dataZoom: [{ type: 'inside', filterMode: 'weakFilter' }],
       series: [
@@ -257,7 +257,7 @@ function Timeline({
                   y: rect.y + rect.height / 2,
                   text: seg.label,
                   fill: seg.opacity >= 0.55 ? '#fff' : t.ink,
-                  fontSize: 11,
+                  fontSize: fs(11),
                   verticalAlign: 'middle',
                 },
               });

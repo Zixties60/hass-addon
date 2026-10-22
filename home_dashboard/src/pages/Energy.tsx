@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { addDays, format } from 'date-fns';
 import { useMemo } from 'react';
 import type { EnergyResult, EnergySettings } from '../../shared/types';
-import { baseOption, barSeries, categoryAxis, EChart, type EOption, valueAxis } from '../components/Chart';
+import { baseOption, barSeries, categoryAxis, EChart, type EOption, fs, isNarrow, valueAxis } from '../components/Chart';
 import { ChartCard, Empty, ErrorBox, Loading, PageHeader, PeriodNav, SettingsLink, StatTile } from '../components/ui';
 import { api } from '../lib/api';
 import { type CostResult, useCost } from '../lib/cost';
@@ -331,9 +331,10 @@ function FlowChart({
   }));
   const option: EOption = {
     tooltip: {
+      confine: true,
       backgroundColor: t.surface,
       borderColor: t.border,
-      textStyle: { color: t.ink, fontSize: 12 },
+      textStyle: { color: t.ink, fontSize: fs(12) },
       valueFormatter: (v: number) => `${fmtNumber(v, 2)} kWh`,
     },
     series: [
@@ -348,7 +349,7 @@ function FlowChart({
         nodeWidth: 10,
         nodeGap: 14,
         draggable: false,
-        label: { color: t.ink2, fontSize: 12, formatter: (p: any) => `${p.name}\n${fmtNumber(p.value, 1)} kWh` },
+        label: { color: t.ink2, fontSize: fs(12), formatter: (p: any) => `${p.name}\n${fmtNumber(p.value, 1)} kWh` },
         lineStyle: { color: 'gradient', opacity: 0.25, curveness: 0.5 },
         emphasis: { focus: 'adjacency' },
       },
@@ -390,7 +391,7 @@ function DevicesChart({ data, t, consumption }: { data: EnergyResult; t: Tokens;
     grid: { ...(base.grid as object), top: 8, right: 64 },
     tooltip: { ...(base.tooltip as object), trigger: 'item', valueFormatter: (v: number) => `${fmtNumber(v, 2)} kWh` },
     xAxis: valueAxis(t, null),
-    yAxis: categoryAxis(t, rows.map((r) => r.name), { inverse: true, axisLabel: { color: t.ink2, fontSize: 12, width: 140, overflow: 'truncate' } }),
+    yAxis: categoryAxis(t, rows.map((r) => r.name), { inverse: true, axisLabel: { color: t.ink2, fontSize: fs(12), width: isNarrow() ? 96 : 140, overflow: 'truncate' } }),
     series: [
       {
         type: 'bar',
@@ -400,7 +401,7 @@ function DevicesChart({ data, t, consumption }: { data: EnergyResult; t: Tokens;
           itemStyle: { color: r.name === 'Untracked' ? t.axis : t.role.home, borderRadius: [0, 4, 4, 0] },
         })),
         barMaxWidth: 20,
-        label: { show: true, position: 'right', color: t.ink2, fontSize: 11, formatter: (p: any) => `${fmtNumber(p.value, 1)} kWh` },
+        label: { show: true, position: 'right', color: t.ink2, fontSize: fs(11), formatter: (p: any) => `${fmtNumber(p.value, 1)} kWh` },
       },
     ],
   };
