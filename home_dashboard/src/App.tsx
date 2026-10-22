@@ -135,7 +135,10 @@ export function App() {
   useOverlay(drawer, { onClose: closeDrawer, container: drawerRef });
 
   // A new page starts at the top (a changed query string on the same page keeps the position).
-  useEffect(() => window.scrollTo(0, 0), [current.key]);
+  // Braces matter: newer Chrome returns a Promise from scrollTo, which React would call as cleanup.
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [current.key]);
 
   return (
     <div className="min-h-dvh">

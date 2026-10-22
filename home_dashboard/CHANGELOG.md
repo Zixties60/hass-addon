@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.5
+
+- Fixed a blank page after switching pages in recent Chrome versions (the whole dashboard
+  disappeared until reloaded).
+- Runs on Node.js 24 LTS (was 22).
+
 ## 0.2.4
 
 - Inside the Home Assistant app, scrolling past the top or bottom of the dashboard no longer
