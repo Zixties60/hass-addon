@@ -29,6 +29,27 @@ export type EOption = echarts.EChartsCoreOption;
 
 export { echarts };
 
+const media = (q: string) => typeof matchMedia === 'function' && matchMedia(q).matches;
+
+/** Touch screen as the main input (phones, tablets, wall panels). */
+export const isTouch = () => media('(pointer: coarse)');
+
+/** Chart font size, one step larger on small screens (matches the CSS text tokens). */
+export const fs = (px: number) => (media('(width < 48rem)') ? px + 1 : px);
+
+/** Phone-width screen: give charts less room for side labels. */
+export const isNarrow = () => media('(width < 30rem)');
+
+/**
+ * On touch screens a one-finger drag scrolls the page instead of panning the chart;
+ * pinch still zooms. Without this, a tall chart can trap page scrolling.
+ */
+function adaptForTouch(option: EOption): EOption {
+  if (!option.dataZoom || !isTouch()) return option;
+  const list = (Array.isArray(option.dataZoom) ? option.dataZoom : [option.dataZoom]) as Record<string, unknown>[];
+  return { ...option, dataZoom: list.map((z) => (z.type === 'inside' ? { moveOnMouseMove: false, ...z } : z)) };
+}
+
 export function EChart({
   option,
   height = 280,
@@ -62,7 +83,7 @@ export function EChart({
   }, []);
 
   useEffect(() => {
-    chart.current?.setOption(option, { notMerge: true });
+    chart.current?.setOption(adaptForTouch(option), { notMerge: true });
   }, [option]);
 
   useEffect(() => {
@@ -80,16 +101,20 @@ export function EChart({
 // ---------- shared option builders (recessive chrome, data is the loud part) ----------
 
 export function baseOption(t: Tokens): EOption {
+  const touch = isTouch();
   return {
+    animation: !media('(prefers-reduced-motion: reduce)'),
     animationDuration: 300,
     textStyle: { fontFamily: 'system-ui, -apple-system, "Segoe UI", sans-serif', color: t.ink2 },
     grid: { left: 8, right: 16, top: 52, bottom: 8, containLabel: true },
     tooltip: {
       trigger: 'axis',
+      // Keep the tooltip inside the chart, so it isn't cut off at the screen edge on phones.
+      confine: true,
       backgroundColor: t.surface,
       borderColor: t.border,
       borderWidth: 1,
-      textStyle: { color: t.ink, fontSize: 12 },
+      textStyle: { color: t.ink, fontSize: fs(12) },
       extraCssText: 'border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);',
       axisPointer: { type: 'line', lineStyle: { color: t.axis, width: 1 } },
     },
@@ -99,7 +124,9 @@ export function baseOption(t: Tokens): EOption {
       icon: 'roundRect',
       itemWidth: 12,
       itemHeight: 4,
-      textStyle: { color: t.ink2, fontSize: 12 },
+      // Legend items toggle series; space them out so each is easy to tap.
+      itemGap: touch ? 18 : 10,
+      textStyle: { color: t.ink2, fontSize: fs(12), padding: touch ? [6, 0] : 0 },
       inactiveColor: t.axis,
     },
   };
@@ -110,7 +137,7 @@ export function timeAxis(t: Tokens, extra: Record<string, unknown> = {}) {
     type: 'time',
     axisLine: { lineStyle: { color: t.axis } },
     axisTick: { show: false },
-    axisLabel: { color: t.muted, hideOverlap: true, fontSize: 11 },
+    axisLabel: { color: t.muted, hideOverlap: true, fontSize: fs(11) },
     splitLine: { show: false },
     ...extra,
   };
@@ -122,7 +149,7 @@ export function categoryAxis(t: Tokens, data: string[], extra: Record<string, un
     data,
     axisLine: { lineStyle: { color: t.axis } },
     axisTick: { show: false },
-    axisLabel: { color: t.muted, hideOverlap: true, fontSize: 11 },
+    axisLabel: { color: t.muted, hideOverlap: true, fontSize: fs(11) },
     ...extra,
   };
 }
@@ -131,11 +158,11 @@ export function valueAxis(t: Tokens, unit?: string | null, extra: Record<string,
   return {
     type: 'value',
     name: unit ?? '',
-    nameTextStyle: { color: t.muted, fontSize: 11, align: 'left' },
+    nameTextStyle: { color: t.muted, fontSize: fs(11), align: 'left' },
     scale: false,
     axisLine: { show: false },
     axisTick: { show: false },
-    axisLabel: { color: t.muted, fontSize: 11, formatter: (v: number) => compact(v) },
+    axisLabel: { color: t.muted, fontSize: fs(11), formatter: (v: number) => compact(v) },
     splitLine: { lineStyle: { color: t.grid, width: 1 } },
     ...extra,
   };

@@ -22,6 +22,21 @@ export function setThemePref(p: ThemePref) {
   window.dispatchEvent(new Event('hd-theme'));
 }
 
+/**
+ * Keep the browser toolbar colour (`theme-color`) on the page surface, following both the
+ * OS scheme and the in-app theme toggle. The `media` variants in index.html cover first paint.
+ */
+export function watchThemeColor() {
+  const sync = () => {
+    const color = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim();
+    if (!color) return;
+    document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]').forEach((m) => (m.content = color));
+  };
+  sync();
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', sync);
+  window.addEventListener('hd-theme', sync);
+}
+
 export interface Tokens {
   dark: boolean;
   surface: string;

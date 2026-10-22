@@ -12,9 +12,10 @@ import {
   X,
   Zap,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toggleHaMenu, useHaFullscreen } from './lib/haFrame';
 import { useRoute } from './lib/hooks';
+import { useOverlay, useSwipeDismiss } from './lib/overlay';
 import { getThemePref, setThemePref, type ThemePref } from './lib/theme';
 import { ClimatePage } from './pages/Climate';
 import { EnergyPage } from './pages/Energy';
@@ -55,14 +56,14 @@ function ThemeToggle() {
 }
 
 const itemClass = (active: boolean) =>
-  `flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm ${
+  `flex w-full items-center gap-3 rounded-lg px-3 py-3 text-left text-base active:bg-surface-2 md:py-2 md:text-sm ${
     active ? 'bg-surface-2 font-medium text-ink' : 'text-ink-2 hover:bg-surface-2 hover:text-ink'
   }`;
 
 function NavItem({ p, current, onNavigate }: { p: PageDef; current: PageDef; onNavigate?: () => void }) {
   return (
     <a href={`#/${p.key}`} aria-current={p === current ? 'page' : undefined} className={itemClass(p === current)} onClick={onNavigate}>
-      <p.icon size={18} /> {p.label}
+      <p.icon size={20} className="shrink-0" /> {p.label}
     </a>
   );
 }
@@ -86,17 +87,17 @@ function Sidebar({
         <span className="flex-1 font-semibold">Home Dashboard</span>
         {onClose && (
           <button className="btn px-2" aria-label="Close menu" onClick={onClose}>
-            <X size={16} />
+            <X size={18} />
           </button>
         )}
       </div>
-      <nav className="flex flex-1 flex-col px-2" aria-label="Pages">
-        <div className="space-y-0.5">
+      <nav className="flex flex-1 flex-col overflow-y-auto px-2" aria-label="Pages">
+        <div className="space-y-1 md:space-y-0.5">
           {PAGES.filter((p) => p.main).map((p) => (
             <NavItem key={p.key} p={p} current={current} onNavigate={onNavigate} />
           ))}
         </div>
-        <div className="mt-auto space-y-0.5 border-t border-line pt-2">
+        <div className="mt-auto space-y-1 border-t border-line pt-2 md:space-y-0.5">
           {PAGES.filter((p) => !p.main).map((p) => (
             <NavItem key={p.key} p={p} current={current} onNavigate={onNavigate} />
           ))}
@@ -109,7 +110,7 @@ function Sidebar({
                 toggleHaMenu();
               }}
             >
-              <House size={18} /> Home Assistant
+              <House size={20} className="shrink-0" /> Home Assistant
             </button>
           )}
         </div>
@@ -128,13 +129,13 @@ export function App() {
   const current = PAGES.find((p) => p.key === page) ?? PAGES[0];
   const Page = current.el;
   const [drawer, setDrawer] = useState(false);
+  const drawerRef = useRef<HTMLElement>(null);
+  const closeDrawer = () => setDrawer(false);
+  const swipe = useSwipeDismiss('left', closeDrawer);
+  useOverlay(drawer, { onClose: closeDrawer, container: drawerRef });
 
-  useEffect(() => {
-    if (!drawer) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setDrawer(false);
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [drawer]);
+  // A new page starts at the top (a changed query string on the same page keeps the position).
+  useEffect(() => window.scrollTo(0, 0), [current.key]);
 
   return (
     <div className="min-h-dvh">
@@ -147,36 +148,42 @@ export function App() {
       <div className={`fixed inset-0 z-40 md:hidden ${drawer ? '' : 'pointer-events-none'}`} aria-hidden={!drawer}>
         <div
           className={`absolute inset-0 bg-black/50 transition-opacity motion-reduce:transition-none ${drawer ? 'opacity-100' : 'opacity-0'}`}
-          onClick={() => setDrawer(false)}
+          onClick={closeDrawer}
         />
         <aside
+          ref={drawerRef}
           role="dialog"
           aria-modal="true"
           aria-label="Menu"
           inert={!drawer}
-          className={`absolute inset-y-0 left-0 w-72 max-w-[85vw] border-r border-line bg-surface shadow-xl transition-transform duration-200 motion-reduce:transition-none ${
+          {...swipe.handlers}
+          style={swipe.style}
+          className={`absolute inset-y-0 left-0 w-72 max-w-[85vw] touch-pan-y overscroll-contain border-r border-line bg-surface pl-[env(safe-area-inset-left)] pt-[env(safe-area-inset-top)] shadow-xl transition-transform duration-200 motion-reduce:transition-none ${
             drawer ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <Sidebar current={current} haMenu={haMenu} onNavigate={() => setDrawer(false)} onClose={() => setDrawer(false)} />
+          <Sidebar current={current} haMenu={haMenu} onNavigate={closeDrawer} onClose={closeDrawer} />
         </aside>
       </div>
 
       {/* Mobile header */}
-      <header className="sticky top-0 z-20 flex items-center gap-2 border-b border-line bg-surface px-4 py-2 md:hidden">
+      <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-line bg-surface/90 py-2 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-[calc(0.5rem+env(safe-area-inset-top))] backdrop-blur-md md:hidden">
         <button className="btn px-2" aria-label="Open menu" aria-expanded={drawer} onClick={() => setDrawer(true)}>
-          <Menu size={16} />
+          <Menu size={20} />
         </button>
-        <span className="font-semibold">{current.label}</span>
+        <span className="truncate text-lg font-semibold">{current.label}</span>
       </header>
 
-      <main className="mx-auto max-w-[1600px] px-4 pb-[calc(6.5rem+env(safe-area-inset-bottom))] pt-4 md:ml-56 md:px-6 md:pb-8 md:pt-6">
+      <main className="mx-auto max-w-[1600px] pb-[calc(7.5rem+env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-5 md:ml-56 md:px-6 md:pb-8 md:pt-6">
         <Page />
       </main>
 
-      {/* Mobile bottom navigation: a floating bar above the page */}
+      {/* Mobile bottom navigation: a floating bar in the thumb zone, Material 3 style (pill behind the active icon) */}
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:hidden">
-        <nav className="pointer-events-auto grid w-full max-w-sm grid-cols-4 gap-1 rounded-2xl border border-line bg-surface/85 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md">
+        <nav
+          aria-label="Main"
+          className="pointer-events-auto grid w-full max-w-sm grid-cols-4 gap-1 rounded-2xl border border-line bg-surface/90 p-1.5 shadow-[0_8px_24px_rgba(0,0,0,0.18)] backdrop-blur-md"
+        >
           {PAGES.filter((p) => p.main).map((p) => {
             const active = p.key === current.key;
             return (
@@ -184,11 +191,17 @@ export function App() {
                 key={p.key}
                 href={`#/${p.key}`}
                 aria-current={active ? 'page' : undefined}
-                className={`flex flex-col items-center gap-0.5 rounded-xl py-1.5 text-[10px] transition-colors ${
-                  active ? 'bg-surface-2 font-medium text-accent' : 'text-muted hover:text-ink'
+                className={`group flex min-h-14 select-none flex-col items-center justify-center gap-1 rounded-xl py-1.5 text-xs ${
+                  active ? 'font-semibold text-ink' : 'text-ink-2'
                 }`}
               >
-                <p.icon size={20} />
+                <span
+                  className={`flex h-8 w-14 items-center justify-center rounded-full transition-colors motion-reduce:transition-none ${
+                    active ? 'bg-accent/15 text-accent' : 'group-hover:bg-surface-2 group-active:bg-surface-2'
+                  }`}
+                >
+                  <p.icon size={22} strokeWidth={active ? 2.25 : 2} />
+                </span>
                 {p.label}
               </a>
             );

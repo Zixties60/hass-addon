@@ -147,12 +147,12 @@ export function SettingsPage() {
               </Field>
             ))}
           </div>
-          <div className="mt-3 flex flex-wrap gap-4 text-sm">
-            <label className="flex items-center gap-2">
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            <label className="flex items-center gap-2 pointer-coarse:min-h-11 pointer-coarse:gap-3">
               <input type="checkbox" checked={draft.energy.invertGridPower} onChange={(e) => setEnergy({ invertGridPower: e.target.checked })} />
               Invert grid power sign
             </label>
-            <label className="flex items-center gap-2">
+            <label className="flex items-center gap-2 pointer-coarse:min-h-11 pointer-coarse:gap-3">
               <input
                 type="checkbox"
                 checked={draft.energy.invertBatteryPower}
@@ -177,6 +177,10 @@ export function SettingsPage() {
             <Field label="Export credit per kWh">
               <input
                 type="number"
+                inputMode="decimal"
+      enterKeyHint="done"
+                enterKeyHint="done"
+                aria-label="Export credit per kWh"
                 step="0.0001"
                 min="0"
                 className="field w-full"
@@ -187,6 +191,11 @@ export function SettingsPage() {
             <Field label="Currency" help="ISO code (EUR, THB, USD…) or a symbol">
               <input
                 className="field w-full"
+                aria-label="Currency"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="done"
                 maxLength={8}
                 value={draft.energy.currency}
                 onChange={(e) => setEnergy({ currency: e.target.value.trim() })}
@@ -201,7 +210,7 @@ export function SettingsPage() {
             Temperature, humidity and air-quality sensors are grouped by area. Areas can come from Home Assistant, be added
             manually, or both (manual sensors are merged into an HA area with the same name).
           </p>
-          <label className="mb-4 flex items-center gap-2 text-sm">
+          <label className="mb-4 flex items-center gap-2 text-sm pointer-coarse:min-h-11 pointer-coarse:gap-3">
             <input
               type="checkbox"
               checked={draft.climate.autoFromHA}
@@ -226,8 +235,8 @@ export function SettingsPage() {
 
       {!readOnly && (
         <div className="fixed inset-x-0 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-20 flex justify-center px-4 md:bottom-4 md:left-56">
-          <div className="flex items-center gap-2 rounded-xl border border-line bg-surface p-2 shadow-lg">
-            <span className="px-2 text-sm text-ink-2">
+          <div className="flex w-full max-w-md items-center gap-2 rounded-xl border border-line bg-surface p-2 shadow-lg md:w-auto md:max-w-none">
+            <span className="min-w-0 flex-1 truncate px-2 text-sm text-ink-2">
               {save.isPending ? 'Saving…' : dirty ? 'Unsaved changes' : save.isSuccess ? 'Saved' : 'No changes'}
             </span>
             <button className="btn" disabled={!dirty} onClick={() => setDraft(structuredClone(saved!))}>
@@ -304,12 +313,12 @@ function PricesEditor({ value, onChange }: { value: EnergySettings; onChange: (p
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-4 text-sm">
-        <label className="flex items-center gap-2">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+        <label className="flex items-center gap-2 pointer-coarse:min-h-11 pointer-coarse:gap-3">
           <input type="radio" name="tariff" checked={!t.progressive} onChange={() => setTariff({ progressive: false })} />
           Flat rate
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-2 pointer-coarse:min-h-11 pointer-coarse:gap-3">
           <input
             type="radio"
             name="tariff"
@@ -430,6 +439,9 @@ function DevicesEditor({
         <div key={d.entity} className="flex flex-wrap items-center gap-2">
           <input
             className="field min-w-0 flex-1"
+            aria-label="Display name"
+            autoCapitalize="words"
+            enterKeyHint="done"
             placeholder={names.get(d.entity)?.name ?? d.entity}
             value={d.name ?? ''}
             onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, name: e.target.value || undefined } : x)))}
@@ -465,13 +477,15 @@ function AreasEditor({ areas, onChange }: { areas: ClimateArea[]; onChange: (a: 
               className="field min-w-0 flex-1 font-medium"
               value={a.name}
               aria-label="Area name"
+              autoCapitalize="words"
+              enterKeyHint="done"
               onChange={(e) => update(i, { name: e.target.value })}
             />
             <button className="btn px-2" aria-label="Remove area" onClick={() => onChange(areas.filter((_, j) => j !== i))}>
               <Trash2 size={16} />
             </button>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             {a.sensors.map((s, k) => (
               <div key={s.entity} className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="min-w-0 flex-1 truncate" title={s.entity}>
@@ -498,7 +512,7 @@ function AreasEditor({ areas, onChange }: { areas: ClimateArea[]; onChange: (a: 
                   aria-label="Remove sensor"
                   onClick={() => update(i, { sensors: a.sensors.filter((_, j) => j !== k) })}
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={16} />
                 </button>
               </div>
             ))}

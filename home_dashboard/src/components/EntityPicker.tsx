@@ -34,11 +34,11 @@ export function EntityPicker({
   const root = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
+    const onDoc = (e: PointerEvent) => {
       if (root.current && !root.current.contains(e.target as Node)) setOpen(false);
     };
-    document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener('pointerdown', onDoc);
+    return () => document.removeEventListener('pointerdown', onDoc);
   }, []);
 
   const results = useMemo(() => {
@@ -62,14 +62,14 @@ export function EntityPicker({
   return (
     <div ref={root} className="relative">
       <div
-        className="field flex min-h-10 flex-wrap items-center gap-1.5 py-1"
+        className="field flex min-h-10 flex-wrap items-center gap-1.5 py-1 pointer-coarse:min-h-12"
         onClick={() => {
           setOpen(true);
           root.current?.querySelector('input')?.focus();
         }}
       >
         {value.map((id, i) => (
-          <span key={id} className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-surface-2 py-0.5 pl-2 pr-1 text-sm">
+          <span key={id} className="inline-flex max-w-full items-center gap-1.5 rounded-md bg-surface-2 py-0.5 pl-2 pr-1 text-sm pointer-coarse:py-1">
             {colors?.(id, i) && (
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: colors(id, i) }} />
             )}
@@ -77,21 +77,30 @@ export function EntityPicker({
               {byId.get(id)?.name ?? id}
             </span>
             <button
-              className="rounded p-0.5 text-muted hover:text-ink"
+              className="-my-1 rounded p-0.5 text-muted hover:text-ink pointer-coarse:p-1.5"
               aria-label={`Remove ${id}`}
               onClick={(e) => {
                 e.stopPropagation();
                 toggle(id);
               }}
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           </span>
         ))}
         <div className="flex min-w-32 flex-1 items-center gap-1">
           {value.length === 0 && <Search size={14} className="text-muted" />}
           <input
-            className="w-full bg-transparent py-1 text-sm outline-none"
+            type="text"
+            role="combobox"
+            aria-expanded={open && !full}
+            aria-autocomplete="list"
+            autoComplete="off"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="search"
+            className="w-full bg-transparent py-1 text-sm outline-none pointer-coarse:py-1.5"
             placeholder={full ? `Maximum ${max} selected` : placeholder}
             value={q}
             disabled={full}
@@ -120,17 +129,17 @@ export function EntityPicker({
       {open && !full && (
         <div className="absolute z-30 mt-1 w-full overflow-hidden rounded-lg border border-line bg-surface shadow-lg">
           {suggest && (
-            <label className="flex items-center gap-2 border-b border-line px-3 py-2 text-xs text-ink-2">
+            <label className="flex items-center gap-2 border-b border-line px-3 py-2 text-xs text-ink-2 pointer-coarse:py-3">
               <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} />
               Show all entities (not only suggested)
             </label>
           )}
-          <ul className="max-h-72 overflow-auto py-1" role="listbox" aria-multiselectable>
+          <ul className="max-h-72 overflow-auto overscroll-contain py-1 pointer-coarse:max-h-[50dvh]" role="listbox" aria-multiselectable>
             {isLoading && <li className="px-3 py-2 text-sm text-muted">Loading entities…</li>}
             {rawCandidate && (
               <li>
                 <button
-                  className="w-full px-3 py-2 text-left text-sm hover:bg-surface-2"
+                  className="w-full px-3 py-2 text-left text-sm hover:bg-surface-2 pointer-coarse:py-3"
                   onClick={() => {
                     toggle(rawCandidate);
                     setQ('');
@@ -148,7 +157,7 @@ export function EntityPicker({
               return (
                 <li key={e.id} role="option" aria-selected={selected}>
                   <button
-                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm ${
+                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm pointer-coarse:py-2.5 ${
                       i === active ? 'bg-surface-2' : 'hover:bg-surface-2'
                     }`}
                     onMouseEnter={() => setActive(i)}

@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.2
+
+- Mobile: larger text, more spacing, and touch targets of at least 44 px for buttons, inputs,
+  menus, period controls and the bottom navigation.
+- Text inputs use a 16 px font on touch screens, so iOS no longer zooms in when one gets focus.
+- The time range picker opens as a bottom sheet on phones.
+- Swipe the mobile menu to the left to close it.
+- Charts: one-finger drags scroll the page instead of panning the chart (pinch still zooms),
+  tooltips stay inside the chart, and legend items are spaced out for tapping.
+- The mobile menu and the time range sheet lock the page behind them, close with Escape, move
+  focus inside when they open and return it when they close. Swipe the sheet down to close it.
+- The bottom navigation highlights the active page with a pill behind its icon.
+- Settings inputs show the right keyboard and don't autocorrect codes or entity names.
+- Secondary text is darker in the light theme so it meets WCAG AA contrast.
+- Every control shows a focus ring for keyboard use, and charts don't animate when the system
+  asks for reduced motion.
+- Content respects the notch in landscape, opening a page scrolls to the top, and table views
+  keep the first column visible when scrolled sideways.
+- The browser toolbar colour follows the light/dark theme, including the in-app toggle.
+- Phones: the hero "now" figures on Overview fit their tile, and the device and timeline charts
+  leave more room for bars by narrowing their side labels.
+
 ## 0.2.1
 
 - Mobile: the bottom navigation is now a floating bar with Overview, Energy, Solar and Climate.

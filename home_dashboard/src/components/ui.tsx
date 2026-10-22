@@ -9,8 +9,9 @@ export function Card({ children, className = '' }: { children: ReactNode; classN
 export function PageHeader({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <h1 className="text-xl font-semibold">{title}</h1>
-      <div className="flex flex-wrap items-center gap-2">{children}</div>
+      {/* On mobile the sticky header already shows the page title. */}
+      <h1 className="sr-only text-xl font-semibold md:not-sr-only">{title}</h1>
+      <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">{children}</div>
     </div>
   );
 }
@@ -36,9 +37,9 @@ export function StatTile({
         {swatch && <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: swatch }} />}
         <span className="truncate">{label}</span>
       </div>
-      <div className={`mt-1 font-semibold leading-tight ${hero ? 'text-5xl' : 'text-2xl'}`}>
+      <div className={`mt-1 font-semibold leading-tight tnum ${hero ? 'text-4xl sm:text-5xl' : 'text-2xl'}`}>
         {value}
-        {unit && <span className={`ml-1 font-normal text-ink-2 ${hero ? 'text-xl' : 'text-sm'}`}>{unit}</span>}
+        {unit && <span className={`ml-1 font-normal text-ink-2 ${hero ? 'text-lg sm:text-xl' : 'text-sm'}`}>{unit}</span>}
       </div>
       {sub && <div className="mt-1 text-xs text-muted">{sub}</div>}
     </Card>
@@ -50,21 +51,32 @@ export function Segmented<T extends string>({
   options,
   onChange,
   label,
+  fill,
 }: {
   value: T;
   options: { value: T; label: string }[];
   onChange: (v: T) => void;
   label?: string;
+  /** Stretch to the full width on mobile, with equal-width options. */
+  fill?: boolean;
 }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className={`max-w-full overflow-x-auto rounded-lg border border-line bg-surface p-0.5 ${
+        fill ? 'flex w-full md:inline-flex md:w-auto' : 'inline-flex'
+      }`}
+    >
       {options.map((o) => (
         <button
           key={o.value}
           role="radio"
           aria-checked={o.value === value}
           onClick={() => onChange(o.value)}
-          className={`rounded-md px-3 py-1 text-sm ${
+          className={`shrink-0 whitespace-nowrap rounded-md py-1 text-sm pointer-coarse:min-h-10 pointer-coarse:py-2 ${
+            fill ? 'flex-1 px-2 md:flex-none md:px-3' : 'px-3'
+          } ${
             o.value === value ? 'bg-surface-2 font-medium text-ink' : 'text-ink-2 hover:text-ink'
           }`}
         >
@@ -77,8 +89,9 @@ export function Segmented<T extends string>({
 
 export function PeriodNav({ period, onChange }: { period: Period; onChange: (p: Period) => void }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex w-full flex-wrap items-center gap-2 md:w-auto">
       <Segmented<PeriodKind>
+        fill
         label="Period"
         value={period.kind}
         onChange={(kind) => onChange({ ...period, kind })}
@@ -90,18 +103,18 @@ export function PeriodNav({ period, onChange }: { period: Period; onChange: (p: 
           { value: 'year', label: 'Year' },
         ]}
       />
-      <div className="inline-flex items-center gap-1">
+      <div className="flex w-full items-center gap-1 md:inline-flex md:w-auto">
         <button className="btn px-2" aria-label="Previous period" onClick={() => onChange(shiftPeriod(period, -1))}>
-          <ChevronLeft size={16} />
+          <ChevronLeft size={18} />
         </button>
-        <span className="min-w-36 text-center text-sm font-medium">{periodLabel(period)}</span>
+        <span className="min-w-36 flex-1 text-center text-sm font-medium md:flex-none">{periodLabel(period)}</span>
         <button
           className="btn px-2"
           aria-label="Next period"
           disabled={isCurrentPeriod(period)}
           onClick={() => onChange(shiftPeriod(period, 1))}
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={18} />
         </button>
         {!isCurrentPeriod(period) && (
           <button className="btn" onClick={() => onChange({ ...period, anchor: Date.now() })}>
@@ -137,8 +150,8 @@ export function ChartCard({
   const [showTable, setShowTable] = useState(false);
   return (
     <Card className={className}>
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <div className="min-w-0">
+      <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="min-w-0 pt-1">
           <h2 className="font-medium">{title}</h2>
           {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
         </div>
@@ -163,12 +176,12 @@ export function ChartCard({
 
 export function DataTable({ data }: { data: TableData }) {
   return (
-    <div className="max-h-96 overflow-auto">
+    <div className="max-h-96 overflow-auto overscroll-contain">
       <table className="tnum w-full text-sm">
         <thead className="sticky top-0 bg-surface text-left text-ink-2">
           <tr>
             {data.columns.map((c, i) => (
-              <th key={c} className={`border-b border-line px-2 py-1.5 font-medium ${i > 0 ? 'text-right' : ''}`}>
+              <th key={c} className={`whitespace-nowrap border-b border-line px-2 py-1.5 font-medium ${i > 0 ? 'text-right' : 'sticky left-0 z-10 bg-surface'}`}>
                 {c}
               </th>
             ))}
@@ -178,7 +191,7 @@ export function DataTable({ data }: { data: TableData }) {
           {data.rows.map((r, i) => (
             <tr key={i} className="border-b border-line last:border-0">
               {r.map((v, j) => (
-                <td key={j} className={`px-2 py-1 ${j > 0 ? 'text-right' : ''}`}>
+                <td key={j} className={`whitespace-nowrap px-2 py-1 pointer-coarse:py-2 ${j > 0 ? 'text-right' : 'sticky left-0 bg-surface'}`}>
                   {v}
                 </td>
               ))}
