@@ -178,7 +178,6 @@ export function SettingsPage() {
               <input
                 type="number"
                 inputMode="decimal"
-      enterKeyHint="done"
                 enterKeyHint="done"
                 aria-label="Export credit per kWh"
                 step="0.0001"
@@ -282,6 +281,7 @@ function NumberInput({
     <input
       type="number"
       inputMode="decimal"
+      enterKeyHint="done"
       step={step}
       min="0"
       className="field w-full"
